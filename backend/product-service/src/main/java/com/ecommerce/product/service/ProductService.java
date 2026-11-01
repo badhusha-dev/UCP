@@ -48,12 +48,18 @@ public class ProductService {
         return productRepository.findAllByActiveTrue();
     }
 
+    /** Storefront catalog: active products of the storefront's tenant only. */
+    public List<Product> getStorefrontProducts(UUID tenantId) {
+        return productRepository.findAllByTenantIdAndActiveTrue(tenantId);
+    }
+
     public Product getProductById(Long id) {
         return productRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found."));
     }
 
-    public Page<Product> searchProducts(String query, Long categoryId, Double minPrice, Double maxPrice, String sortBy, int page, int size) {
+    /** Catalog search; a non-null {@code tenantId} (from a storefront) limits it to that tenant's products. */
+    public Page<Product> searchProducts(UUID tenantId, String query, Long categoryId, Double minPrice, Double maxPrice, String sortBy, int page, int size) {
         Sort sort = Sort.by(Sort.Direction.ASC, "id");
         if ("price_asc".equalsIgnoreCase(sortBy)) {
             sort = Sort.by(Sort.Direction.ASC, "price");
@@ -66,8 +72,12 @@ public class ProductService {
         }
 
         Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size), sort);
+        String text = (query != null && !query.trim().isEmpty()) ? query.trim() : null;
+        if (tenantId != null) {
+            return productRepository.searchTenantProducts(tenantId, text, categoryId, minPrice, maxPrice, pageable);
+        }
         return productRepository.searchProducts(
-                (query != null && !query.trim().isEmpty()) ? query.trim() : null,
+                text,
                 categoryId,
                 minPrice,
                 maxPrice,

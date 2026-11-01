@@ -50,7 +50,7 @@ Feature IDs (`F-`, `A-`, `O-`) refer to [INCOMPLETE_FEATURES.md](INCOMPLETE_FEAT
 
 | ID | Area | Finding | Status | Recommended fix |
 |---|---|---|---|---|
-| B-25 | Checkout | `storefront` slug is accepted by checkout, but no UI sends it, so all orders land in the legacy tenant (K4). | OPEN | Storefront resolution (Phase 6). |
+| B-25 | Checkout | `storefront` slug is accepted by checkout, but no UI sent it, so all orders landed in the legacy tenant (K4). | FIXED 2026-11-01 for the catalog and checkout: the storefront UI resolves the slug (verified host, `<slug>.<base-domain>`, or `?storefront=`) and sends it; product-service lists only that tenant's products; order-service writes that tenant. Cart-service is still not tenant-scoped (K2), so the cart is shared across storefronts; checkout refuses items the storefront's tenant does not sell. Not exercised in a browser. |
 | B-26 | Accounting | Tenant login screen missing in `mfe-accounting`, and no tenant holds an Accounting grant (K17). | OPEN | Add the login route and grant through Super Admin. |
 | B-27 | Events | `order-events` carried no tenant (K4). | **FIXED** | Every order event has `tenantId`, taken from the order when the caller does not set it, and the outbox row records it. No consumer change was needed (three read a JSON tree; notification's DTO gained the field). Consumers do not yet scope data by it. |
 

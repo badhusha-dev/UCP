@@ -3,6 +3,7 @@ package com.ecommerce.product.controller;
 import com.ecommerce.product.dto.*;
 import com.ecommerce.product.model.*;
 import com.ecommerce.product.service.ProductService;
+import com.ecommerce.product.storefront.PublicStorefrontService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/products")
@@ -30,13 +32,16 @@ import java.util.Map;
 public class ProductController {
 
     private final ProductService productService;
+    private final PublicStorefrontService storefronts;
 
-    @Operation(summary = "List & Search Products", description = "Retrieves all products or filters by query, category, price range, and sorting.", security = {})
+    @Operation(summary = "List & Search Products", description = "Retrieves all products or filters by query, category, price range, and sorting. With a storefront slug, only that storefront's products are returned.", security = {})
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Catalog products successfully retrieved")
+            @ApiResponse(responseCode = "200", description = "Catalog products successfully retrieved"),
+            @ApiResponse(responseCode = "404", description = "Unknown or inactive storefront")
     })
     @GetMapping
     public ResponseEntity<?> getProducts(
+            @Parameter(description = "Public storefront slug; the storefront's tenant is resolved by the server", example = "acme") @RequestParam(required = false) String storefront,
             @Parameter(description = "Keyword search query (name or description)") @RequestParam(required = false) String query,
             @Parameter(description = "Category ID filter") @RequestParam(required = false) Long categoryId,
             @Parameter(description = "Minimum price in USD") @RequestParam(required = false) Double minPrice,
@@ -45,13 +50,16 @@ public class ProductController {
             @Parameter(description = "Page number (0-indexed)") @RequestParam(required = false) Integer page,
             @Parameter(description = "Page size") @RequestParam(required = false) Integer size) {
 
+        // A storefront limits the catalog to its tenant, the same tenant checkout will price against
+        UUID tenantId = storefront == null || storefront.isBlank() ? null : storefronts.tenantOf(storefront);
+
         // Backward compatibility: If no search filters or pagination requested, return full list
         if (query == null && categoryId == null && minPrice == null && maxPrice == null && sortBy == null && page == null && size == null) {
-            return ResponseEntity.ok(productService.getAllProducts());
+            return ResponseEntity.ok(tenantId == null ? productService.getAllProducts() : productService.getStorefrontProducts(tenantId));
         }
 
         Page<Product> productPage = productService.searchProducts(
-                query, categoryId, minPrice, maxPrice, sortBy,
+                tenantId, query, categoryId, minPrice, maxPrice, sortBy,
                 page != null ? page : 0,
                 size != null ? size : 12
         );

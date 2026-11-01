@@ -118,7 +118,7 @@ Purpose: find capabilities merchants expect, not to copy any product. Entries de
 | EA-01 | E-commerce Admin | Customer management | EXTEND | P1 | M | user-service; order-service | Proposed |
 | EA-02 | E-commerce Admin | Tenant staff and roles | EXTEND | P1 | M | user-service | Proposed |
 | EA-03 | E-commerce Admin | Gift cards and store credit | NEW | P2 | L | payment-service | Proposed |
-| SF-01 | Storefront | Storefront tenant resolution | EXTEND | P1 | M | product-service; order-service | Proposed |
+| SF-01 | Storefront | Storefront tenant resolution | EXTEND | P1 | M | product-service; order-service | Partly implemented 2026-11-01 (catalog and checkout; cart pending K2) |
 | SF-02 | Storefront | Pricing quote and promo validation | EXTEND | P1 | M | product-service | Proposed |
 | SF-03 | Storefront | Shipping zones and rates | NEW | P1 | L | order-service | Proposed |
 | SF-04 | Storefront | Multi-currency and tax-inclusive display | NEW | P2 | L | product-service | Proposed |

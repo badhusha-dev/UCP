@@ -36,11 +36,21 @@ public class PublicStorefrontService {
         return PricingSupport.camel(rows.get(0));
     }
 
+    /** The tenant an ACTIVE storefront belongs to; 404 for an unknown or inactive slug, so a shopper never chooses the tenant. */
+    public UUID tenantOf(String slug) { return tenant(bySlug(slug == null ? null : slug.trim())); }
+
+    /** A VERIFIED custom domain, or the platform address {@code <slug>.<base-domain>} that {@link #baseUrl} advertises. */
     public Map<String, Object> resolveHost(String host) {
-        List<Map<String, Object>> rows = jdbc.queryForList("SELECT s.slug, d.hostname, d.is_primary FROM storefront_domains d JOIN storefronts s ON s.id=d.storefront_id WHERE d.hostname=? AND d.verification_status='VERIFIED' AND s.status='ACTIVE'",
-                host == null ? "" : host.trim().toLowerCase(Locale.ROOT));
-        if (rows.isEmpty()) throw notFound("Storefront");
-        return Map.of("slug", rows.get(0).get("slug"), "hostname", rows.get(0).get("hostname"), "primary", Boolean.TRUE.equals(rows.get(0).get("is_primary")));
+        String h = host == null ? "" : host.trim().toLowerCase(Locale.ROOT);
+        List<Map<String, Object>> rows = jdbc.queryForList("SELECT s.slug, d.hostname, d.is_primary FROM storefront_domains d JOIN storefronts s ON s.id=d.storefront_id WHERE d.hostname=? AND d.verification_status='VERIFIED' AND s.status='ACTIVE'", h);
+        if (!rows.isEmpty()) return Map.of("slug", rows.get(0).get("slug"), "hostname", rows.get(0).get("hostname"), "primary", Boolean.TRUE.equals(rows.get(0).get("is_primary")));
+        String suffix = "." + baseDomain.toLowerCase(Locale.ROOT);
+        String label = h.endsWith(suffix) ? h.substring(0, h.length() - suffix.length()) : "";
+        if (!label.isEmpty() && !label.contains(".")) {
+            List<String> slugs = jdbc.queryForList("SELECT slug FROM storefronts WHERE slug=? AND status='ACTIVE'", String.class, label);
+            if (!slugs.isEmpty()) return Map.of("slug", slugs.get(0), "hostname", h, "primary", false);
+        }
+        throw notFound("Storefront");
     }
 
     private Optional<JsonNode> published(Map<String, Object> sf, String type, String slug) {

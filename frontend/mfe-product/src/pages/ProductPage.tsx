@@ -63,8 +63,8 @@ import {
   RateReviewRounded,
   PsychologyRounded,
 } from '@mui/icons-material';
-import { addToCart } from '@ecommerce/shared-library';
-import type { AppDispatch, RootState } from '@ecommerce/shared-library';
+import { addToCart, resolveActiveStorefront, storefrontParams } from '@ecommerce/shared-library';
+import type { ActiveStorefront, AppDispatch, RootState } from '@ecommerce/shared-library';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 
@@ -134,6 +134,8 @@ export default function ProductPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>(['All', 'Audio', 'Computer Peripherals', 'Gaming']);
   const [loading, setLoading] = useState(true);
+  const [storefront, setStorefront] = useState<ActiveStorefront | null>(null);
+  const [catalogError, setCatalogError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('featured');
@@ -190,8 +192,13 @@ export default function ProductPage() {
   }, [user]);
 
   const loadProducts = () => {
-    axios
-      .get('/api/products')
+    // The catalog belongs to the storefront this visit is for; the server maps its slug to a tenant
+    resolveActiveStorefront(window.location, window.sessionStorage)
+      .then((active) => {
+        setStorefront(active);
+        setCatalogError('');
+        return axios.get('/api/products', { params: storefrontParams(active) });
+      })
       .then(async (res) => {
         const data = Array.isArray(res.data) ? res.data : res.data.content || [];
         const stockByProduct = new Map<number, number>();
@@ -230,6 +237,7 @@ export default function ProductPage() {
       })
       .catch((err) => {
         console.error('Error fetching products:', err);
+        setCatalogError(err?.name === 'StorefrontLookupError' ? err.message : 'The catalog could not be loaded. Please try again shortly.');
         setLoading(false);
       });
   };
@@ -581,6 +589,17 @@ export default function ProductPage() {
 
       {/* Main Catalog Container */}
       <Container maxWidth="xl">
+        {catalogError && (
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+            {catalogError}
+          </Alert>
+        )}
+        {storefront && (
+          <Alert severity="info" icon={false} sx={{ mb: 3, borderRadius: 2 }}>
+            You are shopping at <strong>{storefront.name}</strong>.
+          </Alert>
+        )}
+
         {/* Search, Categories & Sort Bar */}
         <Paper
           elevation={0}

@@ -38,7 +38,7 @@ import {
   HistoryRounded,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { removeFromCart, clearCart, updateQuantity } from '@ecommerce/shared-library';
+import { removeFromCart, clearCart, updateQuantity, resolveActiveStorefront, storefrontParams } from '@ecommerce/shared-library';
 import type { RootState, AppDispatch } from '@ecommerce/shared-library';
 import axios from 'axios';
 
@@ -107,12 +107,15 @@ export default function OrderPage() {
     setError('');
 
     try {
+      // The order belongs to the storefront the shopper is buying from; order-service resolves its tenant from the slug
+      const storefront = await resolveActiveStorefront(window.location, window.sessionStorage);
       const payload = {
         userId: user.id || 1,
         items: cart.items,
         totalAmount: grandTotal,
         paymentMethod,
         shippingAddress,
+        ...storefrontParams(storefront),
       };
 
       const response = await axios.post('/api/orders/checkout', payload);
@@ -120,7 +123,8 @@ export default function OrderPage() {
       dispatch(clearCart());
     } catch (err: any) {
       // No order exists unless the backend created one: keep the cart and tell the shopper, never show a made-up receipt.
-      const message = err?.response?.data?.message || err?.response?.data?.error;
+      const message = err?.response?.data?.message || err?.response?.data?.error
+        || (err?.name === 'StorefrontLookupError' ? err.message : '');
       setError(message ? `Checkout failed: ${message}` : 'Checkout failed. Your cart is unchanged; please try again.');
     } finally {
       setLoading(false);

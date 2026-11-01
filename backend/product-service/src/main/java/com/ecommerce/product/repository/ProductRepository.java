@@ -45,6 +45,23 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             Pageable pageable
     );
 
+    List<Product> findAllByTenantIdAndActiveTrue(java.util.UUID tenantId);
+
+    /** Storefront catalog: the filters of {@link #searchProducts}, limited to the storefront's tenant. */
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.tenantId = :tenantId AND " +
+           "(:categoryId IS NULL OR p.category.id = :categoryId) AND " +
+           "(:minPrice IS NULL OR p.price >= :minPrice) AND " +
+           "(:maxPrice IS NULL OR p.price <= :maxPrice) AND " +
+           "(:query IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%')))")
+    Page<Product> searchTenantProducts(
+            @Param("tenantId") java.util.UUID tenantId,
+            @Param("query") String query,
+            @Param("categoryId") Long categoryId,
+            @Param("minPrice") Double minPrice,
+            @Param("maxPrice") Double maxPrice,
+            Pageable pageable
+    );
+
     List<Product> findByIdIn(List<Long> ids);
 
     @Query("SELECT p FROM Product p WHERE p.stockQuantity <= p.reorderThreshold AND p.stockQuantity > 0")
