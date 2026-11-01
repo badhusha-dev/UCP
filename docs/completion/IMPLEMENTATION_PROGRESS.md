@@ -285,3 +285,10 @@ Next action
 - Flyway: inventory V1 to V5 applied on Postgres, all successful.
 - First attempt failed before any test ran: `-pl inventory-service` alone could not resolve `ucp-outbox`, which is a sibling module. `-am` fixes that.
 - Not done in this section: the user-service test (still blocked on B-38) and the Postgres path for stock, cart, loyalty and order.
+
+### Other services' migrations on Postgres (2026-11-01)
+
+- Stock, cart, loyalty and order have no Postgres test path, so no test ran against them. Their migration files were applied in numeric version order with `psql -v ON_ERROR_STOP=1` into four scratch databases: `ucp_scratch_phase1_stock`, `_cart`, `_loyalty`, `_order`.
+- Result: stock V1 to V4 (4 files), cart V1 to V2 (2), loyalty V1 to V2 (2), order V1 and V4 to V11 (8). All applied without error.
+- Limits: this is not a Flyway run, so `flyway_schema_history` was not written, and no entity validation or test ran. It shows the SQL applies, not that the services start.
+- Observation: order-service has no V2 or V3 file; the sequence goes from V1 to V4. Flyway accepts gaps, so this is not an error, but the reason is not recorded in the repository.
