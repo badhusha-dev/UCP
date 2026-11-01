@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Badge, IconButton, Menu, MenuItem, Typography, Box, CircularProgress, Divider } from '@mui/material';
+import { Badge, IconButton, Menu, MenuItem, Typography, Box, Divider } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useSelector } from 'react-redux';
@@ -18,7 +18,6 @@ const NotificationBell: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const [loading, setLoading] = useState(false);
 
     const open = Boolean(anchorEl);
     

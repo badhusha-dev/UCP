@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Typography,
   Paper,
@@ -17,11 +17,8 @@ import {
   FormControlLabel,
   Chip,
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
-  Card,
-  CardContent,
   InputAdornment,
 } from '@mui/material';
 import {
@@ -38,7 +35,6 @@ import {
   CheckCircleRounded,
   VerifiedUserOutlined,
   DiscountRounded,
-  ArrowForwardRounded,
   HistoryRounded,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';

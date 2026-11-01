@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Typography,
   Paper,
   Avatar,
   Box,
-  Divider,
   CircularProgress,
   Button,
   Snackbar,
@@ -13,11 +12,9 @@ import {
   Grid,
   Stack,
   Card,
-  CardContent,
   Tabs,
   Tab,
   TextField,
-  InputAdornment,
 } from '@mui/material';
 import {
   PersonOutlineRounded,

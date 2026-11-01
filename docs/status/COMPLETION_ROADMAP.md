@@ -34,7 +34,7 @@ Required for a usable MVP.
 
 | Item | Features | Depends on | Acceptance criteria | Required tests |
 |---|---|---|---|---|
-| 1.1 Frontend typecheck clean | TD-01, TD-02, TD-03 | None | `tsc --noEmit` passes in all 16 workspaces; CI runs it. | CI job. |
+| 1.1 Frontend typecheck clean | TD-01, TD-02, TD-03 | None | **Done 2026-11-01.** `tsc --noEmit` passes in all 16 workspaces; CI runs it. | CI job. |
 | 1.2 Test coverage for each application | TD-04, A-01…A-10 | 1.1 | Each application has route-level smoke tests. | `npm test` in every workspace. |
 | 1.3 Outbox for all producers | F-10, B-16, B-34 | None | Cart, inventory, loyalty, order, stock and notification write events in the same transaction as the state change. | Test that an event is written atomically; test that a publisher retry is idempotent. |
 | 1.4 Logout and token revocation | F-08, B-21 | 0.6 or Redis | Logout invalidates the session; revoked tokens are refused by the gateway. | Token refused after logout. |

@@ -50,7 +50,7 @@ Backend module results from the full run are in [TEST_AND_VERIFICATION_REPORT.md
 |---|---|---|
 | Backend compilation and tests | COMPLETED | Full run: `BUILD SUCCESS`, 19 of 19 modules, 385 executed, 380 passed, 0 failed, 5 skipped (Postgres-gated). |
 | Frontend production builds | COMPLETED | 16 of 16 workspaces. |
-| Frontend typecheck | PARTIALLY COMPLETED | 9 of 16 pass. 7 fail, mostly unused locals. |
+| Frontend typecheck | COMPLETED | 16 of 16 pass with 0 errors; CI runs it before every app build. |
 | Frontend lint | PARTIALLY COMPLETED | 4 workspaces define a lint script; all four pass. |
 | Frontend unit tests | PARTIALLY COMPLETED | 76 tests pass in three workspaces; 12 workspaces have none. |
 | Container images | NOT VERIFIED | No Docker daemon. |
@@ -148,7 +148,7 @@ Container runtime; Kubernetes apply; the Postgres tenant-isolation test; Flyway 
 3. **Shared signing secret** (B-05): compromise of any one of seven services allows forging any token.
 4. **No payment service** (B-01): payment confirmation relies on a shared token.
 5. **Brute-force protection is per instance** (B-20): accounts lock after five failures, and each gateway instance limits sign-ins per address, but the limit is not shared across replicas.
-6. **Untested frontends**: 12 of 16 workspaces have no tests, and typecheck fails in 7 (TD-01, TD-04).
+6. **Untested frontends**: 12 of 16 workspaces have no tests (TD-04). Typecheck now passes everywhere and is enforced in CI.
 7. **Non-reproducible images** (TD-08) and a build gate that does not typecheck (TD-03).
 8. **Nested config repository** (TD-07): configuration changes are not versioned in the parent repository.
 

@@ -26,7 +26,6 @@ import {
   Button,
   Pagination,
   Alert,
-  Divider,
   Tabs,
   Tab,
 } from '@mui/material';
@@ -35,11 +34,7 @@ import {
   AddCircleOutlineRounded,
   HistoryRounded,
   UndoRounded,
-  RefreshRounded,
   FilterListRounded,
-  SearchRounded,
-  CheckCircleRounded,
-  RemoveCircleOutlineRounded,
   WarningAmberRounded,
   VisibilityOutlined,
   ReceiptLongRounded,
@@ -48,7 +43,6 @@ import {
   GavelRounded,
   AssessmentRounded,
   FlagRounded,
-  DoneAllRounded,
   InfoOutlined,
 } from '@mui/icons-material';
 import axios from 'axios';
@@ -187,7 +181,7 @@ export default function AdminLedgerPage() {
   const [adjustUserId, setAdjustUserId] = useState<string>('');
   const [adjustType, setAdjustType] = useState<string>('MANUAL_CREDIT');
   const [adjustAmount, setAdjustAmount] = useState<string>('');
-  const [adjustCurrency, setAdjustCurrency] = useState<string>('USD');
+  const [adjustCurrency] = useState<string>('USD');
   const [adjustRefType, setAdjustRefType] = useState<string>('SUPPORT_TICKET');
   const [adjustRefId, setAdjustRefId] = useState<string>('');
   const [adjustReason, setAdjustReason] = useState<string>('');

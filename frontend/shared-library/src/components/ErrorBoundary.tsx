@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { reportClientError, addBreadcrumb } from '../services/ErrorReporter';
 
 interface Props {

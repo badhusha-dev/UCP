@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Typography,
   Paper,
@@ -29,9 +29,7 @@ import {
   SearchRounded,
   ReceiptLongRounded,
   AttachMoneyRounded,
-  LocalShippingRounded,
   CheckCircleRounded,
-  CancelRounded,
   HourglassEmptyRounded,
   AdminPanelSettingsRounded,
   RefreshRounded,

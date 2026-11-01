@@ -9,3 +9,4 @@ declare module 'accounting_mfe/App';
 declare module 'analytics_mfe/App';
 declare module 'crm_mfe/App';
 declare module 'procurement_mfe/App';
+declare module 'error_stack_mfe/App';

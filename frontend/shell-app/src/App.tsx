@@ -43,7 +43,7 @@ import {
   FactCheckRounded,
 } from '@mui/icons-material';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import { store, logout, ProtectedRoute, initGlobalErrorHandlers, ErrorBoundary } from '@ecommerce/shared-library';
+import { store, logout, ProtectedRoute, initGlobalErrorHandlers } from '@ecommerce/shared-library';
 import type { RootState } from '@ecommerce/shared-library';
 import { marketplaceTheme } from './theme';
 import HomePage from './pages/HomePage';
@@ -84,7 +84,6 @@ function Navigation() {
     if (user?.role === 'MANAGER') return ['users:read','users:manage','roles:manage','accounting:read','accounting:write','accounting:approve','accounting:reconcile','accounting:import','accounting:export','crm:read','crm:manage','inventory:read','inventory:manage','stock:read','stock:manage','analytics:read','loyalty:manage','orders:manage','procurement:read','procurement:manage','errors:manage'].includes(permission);
     return false;
   };
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
   const canViewOperations = ['inventory:view','inventory:read','inventory:manage','stock:read','stock:manage','accounting:read','crm:read','crm:manage','analytics:read','orders:manage','procurement:manage','errors:manage','application:admin','qa:read'].some(hasPermission);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {

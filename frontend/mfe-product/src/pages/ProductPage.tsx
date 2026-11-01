@@ -46,7 +46,6 @@ import {
   ShoppingCartRounded,
   VisibilityRounded,
   LocalShippingOutlined,
-  VerifiedUserOutlined,
   BoltRounded,
   StarRounded,
   FilterListRounded,
@@ -62,7 +61,6 @@ import {
   SendRounded,
   VerifiedRounded,
   RateReviewRounded,
-  RestartAltRounded,
   PsychologyRounded,
 } from '@mui/icons-material';
 import { addToCart } from '@ecommerce/shared-library';

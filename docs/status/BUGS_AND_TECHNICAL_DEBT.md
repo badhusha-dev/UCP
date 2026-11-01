@@ -33,6 +33,7 @@ Feature IDs (`F-`, `A-`, `O-`) refer to [INCOMPLETE_FEATURES.md](INCOMPLETE_FEAT
 | B-17 | Ops | Alertmanager Slack URLs are `REPLACE_ME` placeholders (commit `c57de2be`). Slack notifications do nothing until real URLs are injected. | Commit history; K-log | BLOCKED | Inject from a Secret at deploy time (F-16). |
 | B-18 | Ops | `kubernetes/kustomization.yml` references `base/02-secrets.yml`, which is gitignored. A fresh clone cannot build the manifests. | `.gitignore` lists the file; `kubectl kustomize` only passes locally | **FIXED** | `kubernetes/base/02-secrets.example.yml` lists every key the manifests read, and `docs/deployment/KUBERNETES_DEPLOYMENT.md` documents the copy step. Verified: a clone of HEAD fails without the file and builds (34 Deployments) once the template is copied. |
 | B-36 | crm | `StaffAccessFilter` admits only the exact roles ADMIN and MANAGER, so a SUPER_ADMIN (or any delegated role with `crm:read`), which the gateway lets through, gets 403 from crm-service. The filter also trusts the role header instead of a verified token. | `crm-service` `StaffAccessFilter.STAFF` | OPEN | Replace it with token verification and permission checks, as part of the crm tenant slice. |
+| B-37 | Analytics UI | The admin analytics dashboards (`mfe-analytics` and the copy in `mfe-order`) set an `error` state but never render it, so a failed load shows no message. Found by the typecheck cleanup, which kept the behaviour unchanged (`const [, setError]`). | `AdminAnalyticsDashboard.tsx` line 221 in both | OPEN | Render the error, and remove the duplicated dashboard from `mfe-order`. |
 
 ## Security (other)
 
@@ -74,9 +75,9 @@ Feature IDs (`F-`, `A-`, `O-`) refer to [INCOMPLETE_FEATURES.md](INCOMPLETE_FEAT
 
 | ID | Area | Finding | Status | Recommended fix |
 |---|---|---|---|---|
-| TD-01 | Frontend typecheck | `tsc --noEmit` fails in 7 of 16 workspaces. Most errors are unused imports or locals (TS6133). Initial counts: shell-app 19, mfe-order 35, mfe-user 21, mfe-accounting 12, mfe-analytics 11, mfe-product 8, mfe-cart 4. After this session: mfe-user 11, mfe-product 7. | OPEN | Remove unused imports, then add a `typecheck` script to CI. |
-| TD-02 | Frontend typecheck | `shared-library` imports types without `import type`, which fails under `verbatimModuleSyntax` in consumers (TS1484). The library's own `npm run build` passes. | OPEN | Use `import type` in `shared-library/src/components`. |
-| TD-03 | Build gate | Vite builds do not typecheck, so B-10 shipped past CI, which only builds. | OPEN | Add `tsc --noEmit` to `ci-frontend.yml` (follows TD-01). |
+| TD-01 | Frontend typecheck | `tsc --noEmit` failed in 7 of 16 workspaces: 76 unique errors (58 unused imports, 7 unused locals, 4 non-type-only imports, 1 undeclared Module Federation remote), plus 3 follow-on errors uncovered by the fixes. | **FIXED** | All 16 workspaces report 0 errors. Builds, lint (4) and node tests (76) still pass. |
+| TD-02 | Frontend typecheck | `shared-library` imported types without `import type`, which fails under `verbatimModuleSyntax` in consumers (TS1484). | **FIXED** | Type-only imports use `import type`. shared-library compiles JSX with `react-jsx`, like its consumers, so it no longer needs `React` in scope. |
+| TD-03 | Build gate | Vite builds do not typecheck, so B-10 shipped past CI, which only builds. | **FIXED** | `ci-frontend.yml` runs `tsc --noEmit` for each app before its build. |
 | TD-04 | Test coverage | 12 of 16 frontend workspaces have no test files. CI's unit-test matrix runs 3 workspaces (shared-library, mfe-order, mfe-product). | OPEN | Add smoke tests for each application's routes. |
 | TD-05 | Legacy code | `backend/legacy` has 43 files outside the parent POM. They are not built or tested. | OPEN | Delete or move to an archive branch after review (O-05). |
 | TD-06 | Documentation drift | README says "23/23 containers UP" and "Docker Containers" badge. Compose defines 46 services. README also uses `d:\practical\ecommerce-platform`. | OPEN | Refresh README from this audit. |

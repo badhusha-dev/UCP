@@ -14,7 +14,6 @@ import {
   Grid,
   Stack,
   Card,
-  CardContent,
   Chip,
   TextField,
   MenuItem,
@@ -30,7 +29,6 @@ import {
   Divider,
   Switch,
   FormControlLabel,
-  Badge,
 } from '@mui/material';
 import {
   AccountBalanceWalletRounded,
@@ -414,7 +412,7 @@ export default function CustomerLedgerPage() {
         a.remove();
         window.URL.revokeObjectURL(url);
       })
-      .catch((err) => {
+      .catch(() => {
         setError('Failed to download account statement CSV.');
       });
   };

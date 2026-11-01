@@ -49,6 +49,8 @@ Backend static counts per module: user 13, product 77, order 99, accounting 27, 
 
 No TS2304, TS2769, TS2322, TS2339 or TS2551 errors remain in any workspace.
 
+**Update, later on 2026-11-01:** after the typecheck cleanup, `tsc --noEmit` reports 0 errors in all 16 workspaces. All 16 builds, the 4 lint scripts and the 76 node tests still pass. `ci-frontend.yml` now runs the typecheck before each app build.
+
 ## Lint (`npm run lint`)
 
 | Workspace | Result |

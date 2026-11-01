@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Typography,
   Paper,
@@ -8,7 +8,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  CircularProgress,
   Box,
   Container,
   Grid,
@@ -39,19 +38,12 @@ import {
   CalendarTodayRounded,
   RefreshRounded,
   FileDownloadRounded,
-  WarningAmberRounded,
-  CheckCircleOutlineRounded,
   ShoppingCartRounded,
-  LocalShippingRounded,
   AttachMoneyRounded,
-  Inventory2Rounded,
   PeopleRounded,
-  ReceiptLongRounded,
   SmartToyRounded,
   InfoOutlined,
   CloseRounded,
-  SearchRounded,
-  FilterListRounded,
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -218,7 +210,7 @@ export default function AdminAnalyticsDashboard() {
   const [customStart, setCustomStart] = useState<string>('');
   const [customEnd, setCustomEnd] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
 
   // Data states
   const [overview, setOverview] = useState<OverviewData | null>(null);
