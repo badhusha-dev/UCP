@@ -323,3 +323,11 @@ Next action
 - Problems found: parallel frontend builds time out on `npm install`; the gateway's dependency list pulls in 10 services; eleven hard-coded `container_name` entries; Zipkin errors when observability is not started.
 - Details, commands and the stop/remove procedure: [DEPLOYMENT_REPORT.md](DEPLOYMENT_REPORT.md) and [../deployment/LOCAL_DEPLOYMENT.md](../deployment/LOCAL_DEPLOYMENT.md).
 - No code changed for the deployment. Secrets for it live in `scripts/dev-seed/deploy-local.env`, which is git-ignored; your `.env` was not modified.
+
+### Browser check of the local deployment and SF-01 (2026-11-01)
+
+- Built-in browser: the shell home page and the product catalog render with no console errors. The product remote loads from port 3001 and calls only same-origin `/api` paths.
+- SF-01 in the browser: `?storefront=local-demo` shows the storefront banner and 3 items; `?storefront=empty-shop` (a tenant with no products) shows 0 items; `?storefront=nope` returns 404 from the lookup, clears the stored slug and falls back to the default catalog.
+- SF-01 on the server, through the gateway: checkout with `local-demo` produced order 2 in the storefront's store; `empty-shop` and an unknown slug were refused with 400 and created no order. This is the first run of order-service calling product-service's internal storefront lookup over the network.
+- Test data added to the local deployment only: two `storefronts` rows (inserted with `psql`), a few throwaway customers, and orders 1 and 2. No repository file changed.
+- Not clicked through: sign-in, cart and checkout pages. The checkout checks used the API with a throwaway customer.

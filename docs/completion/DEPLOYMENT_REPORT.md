@@ -42,7 +42,7 @@ Compose has no `name:`, so the project is `ucp` (the directory name) and it crea
 
 ## Not verified
 
-- **No browser run.** The frontends were fetched over HTTP; no page was rendered, no UI login or checkout was clicked, and the storefront changes from SF-01 were not exercised in a browser.
+- **Most of the UI in a browser.** Only the shell home page and the catalog were rendered (see the browser section below). Sign-in, the cart UI and checkout were not clicked through, and the order, user, cart and super-admin frontends were only fetched over HTTP.
 - **Stock effect of checkout.** After the order, `stock_db.stock_reservation` had 0 rows. Whether the stock reservation happens through events, later, or not on this path was not investigated.
 - **Notifications and payments.** notification-service was not running, and no payment service exists.
 - **The nine undeployed services** and the nine other frontends.
@@ -60,6 +60,25 @@ Compose has no `name:`, so the project is `ucp` (the directory name) and it crea
 | 6 | Services log `ERROR ... zipkin: Name does not resolve` when Zipkin is not started. | Expected in this lean mode. |
 | 7 | The login response has no user `id` field, so a client cannot learn its own ID from login. | Noted only. |
 | 8 | A one-off `alpine` image was pulled from Docker Hub to size a volume. | Small utility image; no effect on the deployment. |
+
+## Browser and SF-01 check (built-in browser, same day)
+
+| Check | Result |
+|---|---|
+| `http://localhost:3000/` | Renders the storefront shell; no console errors |
+| `http://localhost:3000/products` | The product remote loads from port 3001 (`remoteEntry.js`); the page makes only same-origin `/api` calls (`/api/products/categories`, `/api/products`, `/api/stock/batch`), all 200; shows "Showing 3 items"; no console errors |
+| `?storefront=local-demo` | The page calls `/api/products/public/storefront/local-demo`, then `/api/products?storefront=local-demo`; shows "You are shopping at Local Demo Shop" and 3 items; stores the slug in `sessionStorage` |
+| `?storefront=empty-shop` (a tenant with no products) | Banner for that storefront, 0 items, stored slug replaced |
+| `?storefront=nope` | The lookup returns 404; the stored slug is cleared; no banner; the default catalog (3 items) loads |
+| Checkout through the gateway with `storefront=local-demo` | HTTP 200, order 2, `PLACED`, in the storefront's store `main` (the legacy checkout used `default`) and the storefront's tenant |
+| Checkout with `storefront=empty-shop` | HTTP 400, "An item is not sold by this storefront or cannot be priced."; no order created |
+| Checkout with `storefront=nope` | HTTP 400, "Unknown storefront." |
+
+This is the first run of order-service calling product-service's internal storefront lookup with the service token over the real network.
+
+Not clicked through: sign-in, adding to the cart, and checkout in the UI. The checkout checks above used the gateway API with a throwaway customer, not the checkout page.
+
+**Test data left in this local deployment** (all in the new `ucp_*` volumes; none in any repository file): two rows in `product_db.storefronts` (`local-demo`, `empty-shop`, inserted directly with `psql` because the admin API needs a tenant login), a few throwaway customer accounts (`smoke-*` and `sf-*` at `ucp-local.test`), and orders 1 and 2 in `order_db`.
 
 ## Stopping and removing
 

@@ -33,7 +33,7 @@ A run with the first `-Dtest` attempt (comma-separated list) did not execute any
 - Container images: not built or started in this pass. The Docker daemon is running.
 - Compose stack: `docker compose config` was run with placeholder secrets (46 services). The stack was not started.
 - Kubernetes: `kubectl kustomize` builds (34 Deployments, 18 NetworkPolicies). Not applied to a cluster.
-- Browser: no UI flow was exercised in any app, including the storefront changes (SF-01).
+- Browser: only the shell home page and the product catalog (including `?storefront=` for a storefront, an empty storefront and an unknown slug) were checked in the built-in browser. Sign-in, cart and checkout pages, and every other app, were not.
 - Kafka: no broker. Outbox publication is tested in the outbox module only.
 - Postgres for the cart, loyalty, order, stock, notification, qa, error-stack and crm services: no Postgres test path exists yet.
 - Load, DAST and penetration testing.
