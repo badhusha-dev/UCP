@@ -48,9 +48,24 @@ Existing accounts start unlocked. The fields are not included in any API respons
   UPDATE users SET locked_until = NULL, failed_login_attempts = 0 WHERE email = '<email>';
   ```
 
+## Gateway rate limit
+
+The API gateway also limits sign-in requests per client address, so one client cannot spread guesses across many accounts.
+
+- Applies to `POST /api/users/login` and `POST /api/users/login/application`, which share one counter.
+- Default: **20 requests per address per minute**. Beyond that the gateway answers `429 Too Many Requests` with a `Retry-After` header (seconds), without contacting user-service.
+- The client address is the `X-Real-IP` header. The frontend nginx sets it to the real peer; without it, the TCP peer address is used.
+
+| Property (api-gateway) | Default | Meaning |
+|---|---|---|
+| `gateway.login-rate-limit.enabled` | `true` | Turn the limit off |
+| `gateway.login-rate-limit.max-attempts` | `20` | Requests allowed per address per window |
+| `gateway.login-rate-limit.window` | `PT1M` | Window length |
+
 ## Known limitations
 
-- No per-IP rate limiting at the gateway yet. An attacker can still try one password against many accounts (catalog PLT-01, second part).
+- The gateway counter is held in memory by each gateway instance. With N replicas, the effective limit is N times higher. A Redis-backed limit is planned (catalog PLT-06).
+- A client that connects to the gateway directly, not through nginx or an ingress, can set `X-Real-IP` itself and so pick its own counter. The per-account lockout still applies.
 - Unknown emails return 401 slightly faster than wrong passwords, because no password hash is computed. The difference predates this change.
 - `POST /api/users/register` already reveals whether an email is registered (409), so the 423 response does not add a new way to discover accounts.
 - The migration has not yet been run against Postgres. Tests use H2 with Flyway disabled.

@@ -94,7 +94,7 @@ Purpose: find capabilities merchants expect, not to copy any product. Entries de
 
 | ID | Application | Feature | Type | Priority | Complexity | Owning service | Status |
 |---|---|---|---|---|---|---|---|
-| PLT-01 | Platform | Account lockout and login throttling | EXTEND | P0 | S | user-service; api-gateway | **Lockout implemented**; gateway throttling deferred |
+| PLT-01 | Platform | Account lockout and login throttling | EXTEND | P0 | S | user-service; api-gateway | **Implemented** (throttling is per gateway instance; Redis later) |
 | PLT-02 | Platform | Asymmetric JWT with issuer and audience | EXTEND | P0 | M | user-service; all verifiers | Proposed |
 | PLT-03 | Platform | Tenant isolation framework | EXTEND | P0 | L | each owning service | Proposed |
 | PLT-04 | Platform | Payment service | NEW | P0 | XL | payment-service (new) | Proposed; PSP decision needed |
@@ -195,7 +195,7 @@ Each application stays a Module Federation remote loaded by `shell-app`. Cross-c
 
 | Field | Detail |
 |---|---|
-| Application / Type | Platform identity · EXTEND (`user-service` `AuthController`) · **Lockout implemented in this change; gateway throttling deferred** |
+| Application / Type | Platform identity · EXTEND (`user-service` `AuthController`) · **Implemented: lockout (user-service) and per-address throttling (api-gateway, in memory)** |
 | Priority / Complexity | P0 / S |
 | Business problem | Login accepted unlimited password guesses (B-20). |
 | Proposed functionality | After N failed sign-ins (default 5), lock the account for a period (default 15 min). Applies to both `/login` and `/login/application`. A correct password during the lock is refused. Success clears the counter. Second part: per-IP rate limit at the gateway. |
@@ -204,15 +204,15 @@ Each application stays a Module Federation remote loaded by `shell-app`. Cross-c
 | Backend APIs | Existing login endpoints return `423 Locked` while locked. Later: `POST /api/platform/users/{id}/unlock` (permission `users:manage`). |
 | Database changes | `users.failed_login_attempts INTEGER NOT NULL DEFAULT 0`, `users.locked_until TIMESTAMPTZ` (V16). |
 | Events and integrations | Later: `identity.user.locked` for the notification center and audit. |
-| Dependencies | None for lockout. Gateway throttling needs Redis (`RequestRateLimiter`). |
+| Dependencies | None. A cluster-wide limit later needs Redis. |
 | Security considerations | Counter updated by single SQL statements, so concurrent failures are not lost. `/register` already reveals whether an email exists (409), so 423 adds no new enumeration channel. A wrong-email request skips password hashing, which leaves a timing difference (pre-existing, recorded as a limitation). |
 | Business value | Removes the cheapest account-takeover path. |
 | Acceptance criteria | Five failures lock the account; the correct password then returns 423. The lock expires. Success resets the counter. Unknown emails always return 401. Both login endpoints behave the same. |
 | Owning service | user-service (lockout); api-gateway (throttling). |
-| Tenant isolation | Lockout is per user account, which is platform-level identity. Throttling keys are per IP and per email. |
+| Tenant isolation | Lockout is per user account, which is platform-level identity. Throttling is keyed by client address. |
 | Failure handling | A database failure while recording a failure surfaces as a 5xx; sign-in does not silently succeed. |
 | Observability | WARN log `User {id} locked until {time} after {n} failed sign-in attempts`. Later: a lockout counter metric. |
-| Testing | Five integration tests in `AuthAndUserIntegrationTest` (passing). Throttling: a gateway test for 429. |
+| Testing | Five integration tests in `AuthAndUserIntegrationTest` and three in `LoginRateLimitTest` (all passing). |
 
 ### PLT-02 Asymmetric JWT with issuer and audience
 
@@ -1211,7 +1211,7 @@ Each application stays a Module Federation remote loaded by `shell-app`. Cross-c
 | Live chat widget | Deferred | After CS-01 and CS-02; needs WebSocket infrastructure. |
 | Headless storefront API marketplace | Deferred | After PLT-10 and PLT-16. |
 | Point-of-sale hardware integration | Deferred | No hardware partner chosen. |
-| Gateway per-IP throttling (second half of PLT-01) | Deferred | Needs Redis wired into the gateway; scheduled with PLT-06. |
+| Cluster-wide login throttling | Deferred | The gateway limiter added for PLT-01 counts per instance; move it to Redis with PLT-06. |
 
 ---
 
@@ -1220,5 +1220,6 @@ Each application stays a Module Federation remote loaded by `shell-app`. Cross-c
 Implemented in this change (details in [docs/status/IMPLEMENTATION_PROGRESS.md](../status/IMPLEMENTATION_PROGRESS.md)):
 
 - **PLT-01, account lockout.** `user-service`: migration `V16__account_lockout.sql`, `LoginAttemptService`, `AuthController` (both login endpoints), three atomic `UserRepository` updates, OpenAPI responses 401 and 423, and five integration tests. User-service suite: 17 tests, 0 failures. The V16 migration was not run against Postgres; the tests build the schema from entities with Flyway off.
+- **PLT-01, gateway throttling.** `api-gateway` `LoginRateLimitFilter`: 20 sign-in requests per client address per minute across both login endpoints, then `429` with `Retry-After`. Three tests in `LoginRateLimitTest`; gateway suite 41 tests, 0 failures. Counters are per instance.
 
 Not implemented: every other entry in this catalog. The reasons are in the roadmap: most P0 items wait on decisions (PSP, key management), and the rest follow in dependency order.

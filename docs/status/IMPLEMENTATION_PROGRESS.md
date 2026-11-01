@@ -26,6 +26,7 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | Remove committed credentials from tracked files (B-06 to B-09, B-35) | `git grep` finds none outside docs and tests; compose resolves with `.env` and refuses without; kustomize builds; error-stack 6/6 tests pass. Rotation of the old values is still the owner's task. |
 | Tenant-scope inventory analytics and require `analytics:read` (B-04) | product-service: 79 tests, 0 failures (2 new) |
 | Kubernetes secrets template (B-18) | Fresh-clone simulation: build fails without `02-secrets.yml`, passes with the template copied (34 Deployments) |
+| Gateway sign-in rate limit (B-20, PLT-01 second half) | api-gateway: 41 tests, 0 failures (3 new in `LoginRateLimitTest`) |
 
 ## In progress
 

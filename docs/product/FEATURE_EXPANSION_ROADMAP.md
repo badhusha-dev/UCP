@@ -21,8 +21,8 @@ Complexity uses the catalog scale: S (under 1 week), M (1–3 weeks), L (3–6 w
 | Item | Size | Depends on | Status |
 |---|---|---|---|
 | PLT-01 Account lockout | S | — | **Done (this change)** |
-| PLT-01 Gateway per-IP throttling | S | Redis in the gateway | Pending |
-| Credential removal from tracked files (status roadmap 0.1) | S | — | Pending |
+| PLT-01 Gateway per-address throttling | S | — | **Done** (in memory; Redis-backed later) |
+| Credential removal from tracked files (status roadmap 0.1) | S | — | **Done** |
 | Credential rotation | S | Owner confirms live values | BLOCKED |
 | PLT-02 Asymmetric JWT | M | Key-management decision | BLOCKED |
 | PLT-03 Tenant isolation framework, nine slices | L | — (PLT-02 preferred) | Pending |
@@ -149,7 +149,7 @@ Complexity uses the catalog scale: S (under 1 week), M (1–3 weeks), L (3–6 w
 
 ## Recommended execution order
 
-1. Credential removal from tracked files, PLT-01 throttling and PLT-05 outbox. None is blocked, and the last two unblock later work.
+1. PLT-05 outbox. It is not blocked and unblocks INV-01, DEL-01 and the notification center. Credential removal and PLT-01 throttling are done.
 2. PLT-03 tenant slices, starting with crm and cart (needed by SF-01).
 3. ACC-01 immutability, once a scratch Postgres is available.
 4. Decisions on PSP and key management, so that PLT-04 and PLT-02 can start.
@@ -170,5 +170,5 @@ Complexity uses the catalog scale: S (under 1 week), M (1–3 weeks), L (3–6 w
 
 | Phase | Done | Remaining |
 |---|---|---|
-| 1 | PLT-01 lockout | Throttling, credentials, PLT-02, PLT-03, PLT-05, ACC-01, PLT-04 |
+| 1 | PLT-01 lockout and throttling; credential removal from files | Credential rotation, PLT-02, PLT-03, PLT-05, ACC-01, PLT-04 |
 | 2–7 | — | All |
