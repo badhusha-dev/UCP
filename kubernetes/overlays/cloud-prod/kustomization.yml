@@ -1,0 +1,77 @@
+# ==============================================================================
+# Cloud Production Kustomize Overlay - Universal Commerce Platform
+# High-Availability Multi-AZ Resilience, Pod Anti-Affinity & Progressive Canaries
+# ==============================================================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ecommerce
+
+namePrefix: prod-
+
+commonLabels:
+  environment: prod
+  tier: enterprise
+  compliance: pci-dss-soc2
+  managed-by: gitops-argocd
+
+resources:
+  - ../../base/00-namespace.yml
+  - ../../base/01-configmap.yml
+  - ../../base/02-secrets.yml
+  - ../../cloud-integration/aws-services-endpoints.yml
+  - ../../cloud-integration/aws-storage-class.yml
+  - ../../cloud-integration/aws-irsa-service-accounts.yml
+  - ../../cloud-integration/aws-alb-ingress.yml
+  - ../../platform/discovery-server.yml
+  - ../../platform/config-server.yml
+  - ../../services/user-service.yml
+  - ../../services/product-service.yml
+  - ../../services/order-service.yml
+  - ../../services/notification-service.yml
+  - ../../api/api-gateway.yml
+  - ../../frontend/frontend.yml
+  - ../../base/pod-disruption-budgets.yml
+  - ../../mesh/gateway.yml
+  - ../../mesh/virtual-services.yml
+  - ../../mesh/destination-rules.yml
+  - ../../mesh/security-mtls.yml
+  - ../../mesh/authorization-policies.yml
+  - ../../mesh/sidecar-scope.yml
+  - ../../mesh/telemetry.yml
+  - ../../gitops/flagger/flagger-alert-provider.yml
+  - ../../gitops/flagger/flagger-metric-templates.yml
+  - ../../gitops/flagger/flagger-canary-order-service.yml
+  - ../../gitops/flagger/flagger-canary-product-service.yml
+  - ../../gitops/flagger/flagger-canary-user-service.yml
+
+patches:
+  # Multi-AZ Pod Anti-Affinity & Multi-Replica scaling
+  - target:
+      kind: Deployment
+      name: .*
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: all-prod-services
+      spec:
+        replicas: 2
+        template:
+          metadata:
+            annotations:
+              sidecar.istio.io/inject: "true"
+          spec:
+            serviceAccountName: ecommerce-app-sa
+            affinity:
+              podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                          - key: app
+                            operator: In
+                            values: ["user-service", "product-service", "order-service", "notification-service", "api-gateway"]
+                      topologyKey: topology.kubernetes.io/zone

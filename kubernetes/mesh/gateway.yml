@@ -1,0 +1,42 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: ecommerce-gateway
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: service-mesh
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    # HTTP Port 80 (Auto-redirect to HTTPS or direct edge routing)
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "ecommerce.local"
+        - "*.ecommerce.local"
+      tls:
+        httpsRedirect: false
+    # HTTPS Port 443 with TLS termination & modern cipher suites
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      hosts:
+        - "ecommerce.local"
+        - "*.ecommerce.local"
+      tls:
+        mode: SIMPLE
+        credentialName: ecommerce-tls-cert
+        minProtocolVersion: TLSV1_2
+        maxProtocolVersion: TLSV1_3
+        cipherSuites:
+          - "ECDHE-ECDSA-AES128-GCM-SHA256"
+          - "ECDHE-RSA-AES128-GCM-SHA256"
+          - "ECDHE-ECDSA-AES256-GCM-SHA384"
+          - "ECDHE-RSA-AES256-GCM-SHA384"
+          - "ECDHE-ECDSA-CHACHA20-POLY1305"
+          - "ECDHE-RSA-CHACHA20-POLY1305"

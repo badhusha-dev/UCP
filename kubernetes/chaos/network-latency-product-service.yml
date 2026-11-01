@@ -1,0 +1,32 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: network-latency-product-service
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: network-latency-product-service
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: chaos-engineering
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - ecommerce
+    labelSelectors:
+      app: product-service
+  delay:
+    latency: "2000ms"
+    jitter: "100ms"
+    correlation: "25"
+  direction: to
+  target:
+    selector:
+      namespaces:
+        - ecommerce
+      labelSelectors:
+        app: order-service
+    mode: all
+  duration: "60s"
+  scheduler:
+    cron: "*/5 * * * *"

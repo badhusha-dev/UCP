@@ -1,0 +1,28 @@
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: mesh-default-telemetry
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: service-mesh
+spec:
+  tracing:
+    - providers:
+        - name: zipkin
+      randomSamplingPercentage: 100.0
+      customTags:
+        environment:
+          literal:
+            value: production
+        cluster:
+          literal:
+            value: ecommerce-prod
+  accessLogging:
+    - providers:
+        - name: envoy
+      filter:
+        expression: "response.code >= 400 || request.url_path.startsWith('/api/')"
+  metrics:
+    - providers:
+        - name: prometheus

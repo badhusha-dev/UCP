@@ -1,0 +1,68 @@
+# ==============================================================================
+# Cloud Development Kustomize Overlay - Universal Commerce Platform
+# Cost-Optimized EKS Deployment with Spot Node Tolerations & Single Replicas
+# ==============================================================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ecommerce-dev
+
+namePrefix: dev-
+
+commonLabels:
+  environment: dev
+  tier: microservices
+  managed-by: gitops-argocd
+
+resources:
+  - ../../base/00-namespace.yml
+  - ../../base/01-configmap.yml
+  - ../../base/02-secrets.yml
+  - ../../cloud-integration/aws-services-endpoints.yml
+  - ../../cloud-integration/aws-storage-class.yml
+  - ../../cloud-integration/aws-irsa-service-accounts.yml
+  - ../../cloud-integration/aws-alb-ingress.yml
+  - ../../platform/discovery-server.yml
+  - ../../platform/config-server.yml
+  - ../../services/user-service.yml
+  - ../../services/product-service.yml
+  - ../../services/order-service.yml
+  - ../../services/notification-service.yml
+  - ../../services/delivery-service.yml
+  - ../../api/api-gateway.yml
+  - ../../frontend/frontend.yml
+  - ../../frontend/delivery-frontend.yml
+  - ../../base/pod-disruption-budgets.yml
+  - ../../mesh/gateway.yml
+  - ../../mesh/virtual-services.yml
+  - ../../mesh/destination-rules.yml
+  - ../../mesh/security-mtls.yml
+
+patches:
+  - target:
+      kind: Deployment
+      name: .*
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: all-services
+      spec:
+        replicas: 1
+        template:
+          spec:
+            tolerations:
+              - key: "workload"
+                operator: "Equal"
+                value: "stateless"
+                effect: "PreferNoSchedule"
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 80
+                    preference:
+                      matchExpressions:
+                        - key: "lifecycle"
+                          operator: "In"
+                          values: ["spot"]

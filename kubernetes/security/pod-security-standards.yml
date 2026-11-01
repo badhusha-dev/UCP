@@ -1,0 +1,36 @@
+# ==============================================================================
+# Enterprise E-Commerce Platform - Pod Security Standards (PSA) Specification
+# ==============================================================================
+# Implements Kubernetes 1.25+ Pod Security Standards at the Restricted level:
+# - Privilege escalation strictly disallowed
+# - Root containers prohibited (runAsNonRoot: true)
+# - Linux capabilities dropped (drop: ["ALL"])
+# - RuntimeDefault seccomp profile enforced
+# ==============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-security-context-template
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: pod-security-context-template
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+data:
+  restricted-pod-spec.yaml: |
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 10001
+      runAsGroup: 10001
+      fsGroup: 10001
+      seccompProfile:
+        type: RuntimeDefault
+    containers:
+      - name: microservice
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL

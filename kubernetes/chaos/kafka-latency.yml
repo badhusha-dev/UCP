@@ -1,0 +1,28 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: kafka-latency
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: kafka-latency
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: chaos-engineering
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - ecommerce
+    labelSelectors:
+      app: kafka
+  delay:
+    latency: "1500ms"
+    jitter: "200ms"
+    correlation: "50"
+  loss:
+    loss: "20"
+    correlation: "25"
+  direction: both
+  duration: "60s"
+  scheduler:
+    cron: "0 */4 * * *"

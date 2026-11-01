@@ -1,0 +1,74 @@
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: request-success-rate
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.ecommerce.svc.cluster.local:9090
+  query: |
+    sum(
+      rate(
+        http_server_requests_seconds_count{
+          kubernetes_namespace="ecommerce",
+          app="{{ target }}",
+          status!~"5.*"
+        }[1m]
+      )
+    )
+    /
+    sum(
+      rate(
+        http_server_requests_seconds_count{
+          kubernetes_namespace="ecommerce",
+          app="{{ target }}"
+        }[1m]
+      )
+    ) * 100
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: request-duration
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.ecommerce.svc.cluster.local:9090
+  query: |
+    histogram_quantile(
+      0.99,
+      sum(
+        rate(
+          http_server_requests_seconds_bucket{
+            kubernetes_namespace="ecommerce",
+            app="{{ target }}"
+          }[1m]
+        )
+      ) by (le)
+    ) * 1000
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: circuit-breaker-open-state
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.ecommerce.svc.cluster.local:9090
+  query: |
+    sum(
+      resilience4j_circuitbreaker_state{
+        kubernetes_namespace="ecommerce",
+        name=~"{{ target }}.*",
+        state="open"
+      }
+    ) or on() vector(0)

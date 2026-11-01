@@ -1,0 +1,231 @@
+# ==============================================================================
+# ArgoCD Master "App-of-Apps" Orchestrator - Universal Commerce Platform
+# Declarative, wave-sequenced cluster bootstrap and continuous reconciliation
+# ==============================================================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-root-app
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: ecommerce-root-app
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/managed-by: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: ecommerce-platform
+  source:
+    repoURL: "https://github.com/ecommerce-platform/gitops-repo.git"
+    targetRevision: HEAD
+    path: kubernetes/gitops/argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+---
+# ── Wave 0: Cloud Infrastructure & Storage ────────────────────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-cloud-infrastructure
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  project: ecommerce-platform
+  source:
+    repoURL: "https://github.com/ecommerce-platform/gitops-repo.git"
+    targetRevision: HEAD
+    path: kubernetes/cloud-integration
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+# ── Wave 1: Security, Vault & Resilience Policies ─────────────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-security-policies
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  project: ecommerce-platform
+  source:
+    repoURL: "https://github.com/ecommerce-platform/gitops-repo.git"
+    targetRevision: HEAD
+    path: kubernetes/security
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+# ── Wave 2: Core Platform Services (Config & Discovery) ───────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-platform-core
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  project: ecommerce-platform
+  source:
+    repoURL: "https://github.com/ecommerce-platform/gitops-repo.git"
+    targetRevision: HEAD
+    path: kubernetes/platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+# ── Wave 3: Domain Microservices (User, Product, Order, Notification) ─────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-domain-services
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  project: ecommerce-platform
+  source:
+    repoURL: "https://github.com/ecommerce-platform/gitops-repo.git"
+    targetRevision: HEAD
+    path: kubernetes/services
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    ignoreDifferences:
+      - group: apps
+        kind: Deployment
+        jsonPointers:
+          - /spec/replicas
+---
+# ── Wave 4: Frontend Microfrontends & Storefront Shell ─────────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-frontend-storefront
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  project: ecommerce-platform
+  source:
+    repoURL: "https://github.com/ecommerce-platform/gitops-repo.git"
+    targetRevision: HEAD
+    path: kubernetes/frontend
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+# ── Wave 5: Enterprise Service Mesh & Traffic Routing (Istio) ─────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-service-mesh
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  project: ecommerce-platform
+  source:
+    repoURL: "https://github.com/ecommerce-platform/gitops-repo.git"
+    targetRevision: HEAD
+    path: kubernetes/mesh
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+# ── Wave 6: Observability, Metrics & Alerting ─────────────────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-observability
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  project: ecommerce-platform
+  source:
+    repoURL: "https://github.com/ecommerce-platform/gitops-repo.git"
+    targetRevision: HEAD
+    path: kubernetes/monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+# ── Wave 7: Progressive Canary Releases & Flagger Metrics ─────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-canary-rollouts
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  project: ecommerce-platform
+  source:
+    repoURL: "https://github.com/ecommerce-platform/gitops-repo.git"
+    targetRevision: HEAD
+    path: kubernetes/gitops/flagger
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ecommerce
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

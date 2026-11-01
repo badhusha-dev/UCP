@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: flyway-migration-job
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - name: flyway
+          image: flyway/flyway:9-alpine
+          args:
+            - -url=jdbc:postgresql://postgres:5432/user_db
+            - -user=ecommerce_admin
+            - -password=admin_password
+            - -baselineOnMigrate=true
+            - -locations=filesystem:/flyway/sql
+            - migrate
+          volumeMounts:
+            - name: migration-scripts
+              mountPath: /flyway/sql
+      restartPolicy: OnFailure
+      volumes:
+        - name: migration-scripts
+          configMap:
+            name: flyway-scripts
+  backoffLimit: 3

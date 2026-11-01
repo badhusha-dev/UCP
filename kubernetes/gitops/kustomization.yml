@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # ArgoCD GitOps Continuous Delivery
+  - argocd/argocd-project.yml
+  - argocd/argocd-application.yml
+  - argocd/argocd-applicationset.yml
+
+  # Flagger Progressive Canary Delivery & Metric Analysis
+  - flagger/flagger-metric-templates.yml
+  - flagger/flagger-alert-provider.yml
+  - flagger/flagger-canary-order-service.yml
+  - flagger/flagger-canary-product-service.yml
+  - flagger/flagger-canary-user-service.yml

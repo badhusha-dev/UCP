@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-delivery
+  namespace: ecommerce
+  labels:
+    app: mfe-delivery
+    app.kubernetes.io/component: microfrontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mfe-delivery
+  template:
+    metadata:
+      labels:
+        app: mfe-delivery
+    spec:
+      containers:
+        - name: mfe-delivery
+          image: ecommerce/mfe-delivery:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 150m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfe-delivery
+  namespace: ecommerce
+  labels:
+    app: mfe-delivery
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+  selector:
+    app: mfe-delivery
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: delivery-frontend
+  namespace: ecommerce
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: delivery.ecommerce.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-delivery
+                port:
+                  number: 80

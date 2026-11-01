@@ -1,0 +1,108 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-config
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: vault
+    app.kubernetes.io/part-of: ecommerce-platform
+data:
+  config.hcl: |
+    ui = true
+    disable_mlock = true
+    storage "file" {
+      path = "/vault/data"
+    }
+    listener "tcp" {
+      address     = "0.0.0.0:8200"
+      tls_disable = 1
+    }
+    api_addr = "http://vault-service:8200"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: vault
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault
+  template:
+    metadata:
+      labels:
+        app: vault
+    spec:
+      containers:
+        - name: vault
+          image: hashicorp/vault:1.15.6
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+          env:
+            - name: VAULT_DEV_ROOT_TOKEN_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-secrets
+                  key: VAULT_ROOT_TOKEN
+                  optional: true
+            - name: VAULT_DEV_LISTEN_ADDRESS
+              value: "0.0.0.0:8200"
+            - name: VAULT_ADDR
+              value: "http://127.0.0.1:8200"
+          ports:
+            - containerPort: 8200
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /v1/sys/health?standbyok=true
+              port: 8200
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /v1/sys/health?standbyok=true
+              port: 8200
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: vault-config-volume
+              mountPath: /vault/config
+            - name: vault-data
+              mountPath: /vault/data
+      volumes:
+        - name: vault-config-volume
+          configMap:
+            name: vault-config
+        - name: vault-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault-service
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: vault
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8200
+      targetPort: 8200
+      name: http
+  selector:
+    app: vault

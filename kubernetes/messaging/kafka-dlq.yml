@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui
+  namespace: default
+  labels:
+    app: kafka-ui
+    component: messaging-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      containers:
+        - name: kafka-ui
+          image: provectuslabs/kafka-ui:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: KAFKA_CLUSTERS_0_NAME
+              value: "k8s-kafka-cluster"
+            - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: "kafka-service:9092"
+            - name: KAFKA_CLUSTERS_0_ZOOKEEPER
+              value: "zookeeper-service:2181"
+            - name: DYNAMIC_CONFIG_ENABLED
+              value: "true"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-ui
+  namespace: default
+  labels:
+    app: kafka-ui
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8090
+      targetPort: 8080
+      name: http
+  selector:
+    app: kafka-ui
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-dlq-policy
+  namespace: default
+data:
+  retry-policy.properties: |
+    # Advanced Kafka Retry & DLQ Architecture
+    order.events.topic=order-events
+    order.events.retry.attempts=3
+    order.events.backoff.delay.ms=1000
+    order.events.backoff.multiplier=2.0
+    order.events.retry.topics=order-events-retry-0,order-events-retry-1
+    order.events.dlt.topic=order-events-dlt
+    order.events.idempotency.strategy=DATABASE_UNIQUE_KEY
+    order.events.idempotency.prefix=ORDER-

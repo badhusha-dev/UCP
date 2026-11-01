@@ -1,0 +1,147 @@
+# ==============================================================================
+# Pod Disruption Budgets (PDB) - Universal Commerce Platform
+# Guarantees High Availability & Zero-Downtime during EKS Node Upgrades & Spot Drains
+# ==============================================================================
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-gateway-pdb
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: api-gateway
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: discovery-server-pdb
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: discovery-server
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: discovery-server
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: config-server-pdb
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: config-server
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: config-server
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: user-service-pdb
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: user-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: user-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: product-service-pdb
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: product-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: product-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: order-service-pdb
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: order-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: order-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: notification-service-pdb
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: notification-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: notification-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: shell-app-pdb
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: shell-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: shell-app
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mfe-product-pdb
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: mfe-product
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: mfe-product
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mfe-order-pdb
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: mfe-order
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: mfe-order
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mfe-user-pdb
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: mfe-user
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: mfe-user

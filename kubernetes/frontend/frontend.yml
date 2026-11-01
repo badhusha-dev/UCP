@@ -1,0 +1,207 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shell-app
+  namespace: ecommerce
+  labels:
+    app: shell-app
+    app.kubernetes.io/component: microfrontend-shell
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: shell-app
+  template:
+    metadata:
+      labels:
+        app: shell-app
+    spec:
+      containers:
+        - name: shell-app
+          image: ecommerce/shell-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 150m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shell-app
+  namespace: ecommerce
+  labels:
+    app: shell-app
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+  selector:
+    app: shell-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-product
+  namespace: ecommerce
+  labels:
+    app: mfe-product
+    app.kubernetes.io/component: microfrontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mfe-product
+  template:
+    metadata:
+      labels:
+        app: mfe-product
+    spec:
+      containers:
+        - name: mfe-product
+          image: ecommerce/mfe-product:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 150m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfe-product
+  namespace: ecommerce
+  labels:
+    app: mfe-product
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+  selector:
+    app: mfe-product
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-order
+  namespace: ecommerce
+  labels:
+    app: mfe-order
+    app.kubernetes.io/component: microfrontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mfe-order
+  template:
+    metadata:
+      labels:
+        app: mfe-order
+    spec:
+      containers:
+        - name: mfe-order
+          image: ecommerce/mfe-order:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 150m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfe-order
+  namespace: ecommerce
+  labels:
+    app: mfe-order
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+  selector:
+    app: mfe-order
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-user
+  namespace: ecommerce
+  labels:
+    app: mfe-user
+    app.kubernetes.io/component: microfrontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mfe-user
+  template:
+    metadata:
+      labels:
+        app: mfe-user
+    spec:
+      containers:
+        - name: mfe-user
+          image: ecommerce/mfe-user:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 150m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfe-user
+  namespace: ecommerce
+  labels:
+    app: mfe-user
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+  selector:
+    app: mfe-user

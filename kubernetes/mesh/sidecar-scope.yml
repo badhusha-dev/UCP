@@ -1,0 +1,13 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: default-sidecar-scope
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: service-mesh
+spec:
+  egress:
+    - hosts:
+        - "./*"
+        - "istio-system/*"

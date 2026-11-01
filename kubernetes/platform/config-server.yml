@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+  namespace: ecommerce
+  labels:
+    app: config-server
+    app.kubernetes.io/component: config-management
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-server
+  template:
+    metadata:
+      labels:
+        app: config-server
+    spec:
+      containers:
+        - name: config-server
+          image: ecommerce/config-server:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8888
+              name: config
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "native,kubernetes"
+            - name: CONFIG_REPO_URI
+              value: "file:///config-repo"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://discovery-server:8761/eureka/"
+          volumeMounts:
+            - name: config-repo
+              mountPath: /config-repo
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8888
+            initialDelaySeconds: 40
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8888
+            initialDelaySeconds: 25
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+      volumes:
+        - name: config-repo
+          configMap:
+            name: config-repo-files
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-server
+  namespace: ecommerce
+  labels:
+    app: config-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8888
+      targetPort: 8888
+      name: config
+  selector:
+    app: config-server

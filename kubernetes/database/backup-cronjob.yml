@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-backup-pvc
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: postgres-backup
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: disaster-recovery
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup-job
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: postgres-backup-job
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: disaster-recovery
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: postgres-backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: postgres-backup
+              image: postgres:15-alpine
+              env:
+                - name: PGHOST
+                  value: "postgres"
+                - name: PGPORT
+                  value: "5432"
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: ecommerce-secrets
+                      key: POSTGRES_USER
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ecommerce-secrets
+                      key: POSTGRES_PASSWORD
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
+                  TARGET_DIR="/backups/${BACKUP_DATE}"
+                  mkdir -p "${TARGET_DIR}"
+                  echo "Starting database backup at ${BACKUP_DATE}..."
+
+                  for DB in user_db product_db order_db notification_db; do
+                    echo "Backing up ${DB}..."
+                    pg_dump -h "${PGHOST}" -U "${PGUSER}" -d "${DB}" | gzip > "${TARGET_DIR}/${DB}.sql.gz"
+                    sha256sum "${TARGET_DIR}/${DB}.sql.gz" > "${TARGET_DIR}/${DB}.sql.gz.sha256"
+                  done
+
+                  echo "Backup completed successfully in ${TARGET_DIR}."
+                  echo "Retention cleanup: removing backups older than 7 days..."
+                  find /backups -mindepth 1 -maxdepth 1 -type d -mtime +7 -exec rm -rf {} +
+                  echo "Cleanup done."
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backups
+          volumes:
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: postgres-backup-pvc

@@ -1,0 +1,74 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: ecommerce-platform-apps
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: ecommerce-platform-apps
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            namespace: ecommerce-dev
+            targetRevision: develop
+            autoSync: "true"
+            prune: "true"
+            selfHeal: "true"
+            replicasMin: "1"
+            replicasMax: "2"
+          - env: staging
+            namespace: ecommerce-staging
+            targetRevision: staging
+            autoSync: "true"
+            prune: "true"
+            selfHeal: "false"
+            replicasMin: "2"
+            replicasMax: "4"
+          - env: prod
+            namespace: ecommerce
+            targetRevision: main
+            autoSync: "true"
+            prune: "true"
+            selfHeal: "true"
+            replicasMin: "2"
+            replicasMax: "8"
+
+  template:
+    metadata:
+      name: 'ecommerce-platform-{{env}}'
+      labels:
+        environment: '{{env}}'
+        app.kubernetes.io/name: 'ecommerce-platform-{{env}}'
+        app.kubernetes.io/part-of: ecommerce-platform
+    spec:
+      project: ecommerce-platform
+      source:
+        repoURL: "https://github.com/ecommerce-platform/gitops-repo.git"
+        targetRevision: '{{targetRevision}}'
+        path: kubernetes
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: '{{prune}}'
+          selfHeal: '{{selfHeal}}'
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - PruneLast=true
+          - RespectIgnoreDifferences=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas

@@ -1,0 +1,26 @@
+apiVersion: flagger.app/v1beta1
+kind: AlertProvider
+metadata:
+  name: flagger-slack-alerts
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  type: slack
+  channel: "#ecommerce-deployments"
+  username: "flagger-gitops"
+  address: https://hooks.slack.com/services/ECOMMERCE/CANARY/NOTIFICATIONS
+  secretRef:
+    name: flagger-webhook-secret
+---
+apiVersion: flagger.app/v1beta1
+kind: AlertProvider
+metadata:
+  name: flagger-webhook-alerts
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+spec:
+  type: msteams
+  channel: "Deployment Alerts"
+  address: https://outlook.office.com/webhook/ecommerce-progressive-delivery

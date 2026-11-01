@@ -1,0 +1,164 @@
+# ==============================================================================
+# Enterprise E-Commerce Platform - Least-Privilege RBAC Security Manifest
+# ==============================================================================
+
+# 1. Service Accounts
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ecommerce-gateway-sa
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: ecommerce-gateway-sa
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: rbac
+automountServiceAccountToken: true
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ecommerce-services-sa
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: ecommerce-services-sa
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: rbac
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ecommerce-infra-sa
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: ecommerce-infra-sa
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: rbac
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ecommerce-backup-sa
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: ecommerce-backup-sa
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: rbac
+automountServiceAccountToken: true
+---
+
+# 2. Granular Microservices Role (Least Privilege)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ecommerce-services-role
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: ecommerce-services-role
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: rbac
+rules:
+  # Microservices need to read configuration & eureka discovery
+  - apiGroups: [""]
+    resources: ["configmaps", "endpoints", "services"]
+    verbs: ["get", "list", "watch"]
+  # Coordinated leader election via Leases (Resilience4j / Spring Cloud)
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ecommerce-services-binding
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: ecommerce-services-binding
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: rbac
+subjects:
+  - kind: ServiceAccount
+    name: ecommerce-services-sa
+    namespace: ecommerce
+  - kind: ServiceAccount
+    name: ecommerce-gateway-sa
+    namespace: ecommerce
+roleRef:
+  kind: Role
+  name: ecommerce-services-role
+  apiGroup: rbac.authorization.k8s.io
+---
+
+# 3. Database Automated Backup Operator Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ecommerce-backup-role
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: ecommerce-backup-role
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: rbac
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "persistentvolumeclaims"]
+    verbs: ["get", "list"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ecommerce-backup-binding
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: ecommerce-backup-binding
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: rbac
+subjects:
+  - kind: ServiceAccount
+    name: ecommerce-backup-sa
+    namespace: ecommerce
+roleRef:
+  kind: Role
+  name: ecommerce-backup-role
+  apiGroup: rbac.authorization.k8s.io
+---
+
+# 4. Observability Metrics Scraper ClusterRole (Prometheus)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ecommerce-prometheus-cr
+  labels:
+    app.kubernetes.io/name: ecommerce-prometheus-cr
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: rbac
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "nodes/metrics", "services", "endpoints", "pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics", "/actuator/prometheus"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ecommerce-prometheus-crb
+  labels:
+    app.kubernetes.io/name: ecommerce-prometheus-crb
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: rbac
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: ecommerce-monitoring
+roleRef:
+  kind: ClusterRole
+  name: ecommerce-prometheus-cr
+  apiGroup: rbac.authorization.k8s.io

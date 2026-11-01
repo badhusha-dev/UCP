@@ -1,0 +1,11 @@
+declare module 'product_mfe/App';
+declare module 'order_mfe/App';
+declare module 'user_mfe/App';
+declare module 'inventory_mfe/App';
+declare module 'stock_mfe/App';
+declare module 'cart_mfe/App';
+declare module 'loyalty_mfe/App';
+declare module 'accounting_mfe/App';
+declare module 'analytics_mfe/App';
+declare module 'crm_mfe/App';
+declare module 'procurement_mfe/App';

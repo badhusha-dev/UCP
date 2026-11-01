@@ -1,0 +1,76 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ecommerce-platform
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/managed-by: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Enterprise E-Commerce Platform GitOps AppProject"
+
+  # Source code repositories permitted to sync to this project
+  sourceRepos:
+    - "https://github.com/ecommerce-platform/*"
+    - "https://gitlab.internal.ecommerce.com/*"
+    - "https://kubernetes.default.svc"
+    - "*"
+
+  # Destination clusters and namespaces where applications may be deployed
+  destinations:
+    - namespace: ecommerce
+      server: https://kubernetes.default.svc
+    - namespace: ecommerce-dev
+      server: https://kubernetes.default.svc
+    - namespace: ecommerce-staging
+      server: https://kubernetes.default.svc
+    - namespace: flagger-system
+      server: https://kubernetes.default.svc
+    - namespace: ingress-nginx
+      server: https://kubernetes.default.svc
+
+  # Whitelist of cluster-level resources the project can manage
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: "rbac.authorization.k8s.io"
+      kind: ClusterRole
+    - group: "rbac.authorization.k8s.io"
+      kind: ClusterRoleBinding
+    - group: "flagger.app"
+      kind: MetricTemplate
+    - group: "flagger.app"
+      kind: AlertProvider
+
+  # Whitelist of namespace-scoped resources
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  # Denied namespace resources for security isolation
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+
+  # Project roles and RBAC policies
+  roles:
+    - name: platform-admin
+      description: "Full administrative and synchronization control over ecommerce applications"
+      policies:
+        - "p, proj:ecommerce-platform:platform-admin, applications, *, ecommerce-platform/*, allow"
+        - "p, proj:ecommerce-platform:platform-admin, logs, get, ecommerce-platform/*, allow"
+        - "p, proj:ecommerce-platform:platform-admin, exec, create, ecommerce-platform/*, allow"
+      groups:
+        - "ecommerce:platform-admins"
+        - "ecommerce:sre-team"
+
+    - name: developer-readonly
+      description: "Read-only inspection privileges for development and QA teams"
+      policies:
+        - "p, proj:ecommerce-platform:developer-readonly, applications, get, ecommerce-platform/*, allow"
+        - "p, proj:ecommerce-platform:developer-readonly, logs, get, ecommerce-platform/*, allow"
+      groups:
+        - "ecommerce:developers"
+        - "ecommerce:qa-testers"

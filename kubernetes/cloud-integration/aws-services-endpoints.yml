@@ -1,0 +1,61 @@
+# ==============================================================================
+# AWS Managed Services Endpoint Bindings - Universal Commerce Platform
+# Routes in-cluster DNS (postgres, kafka, redis) to Terraform-managed AWS services
+# ==============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/managed-by: terraform-gitops
+spec:
+  type: ExternalName
+  externalName: prod-universal-commerce-postgres.c9ak4k2x.us-east-1.rds.amazonaws.com
+  ports:
+    - name: postgres
+      port: 5432
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/managed-by: terraform-gitops
+spec:
+  type: ExternalName
+  externalName: prod-universal-commerce-redis.cache.amazonaws.com
+  ports:
+    - name: redis
+      port: 6379
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/managed-by: terraform-gitops
+spec:
+  type: ExternalName
+  externalName: b-1.prod-universal-commerce-kafka.msk.us-east-1.amazonaws.com
+  ports:
+    - name: kafka-plaintext
+      port: 9092
+      protocol: TCP
+    - name: kafka-tls
+      port: 9094
+      protocol: TCP
+    - name: kafka-iam
+      port: 9098
+      protocol: TCP

@@ -1,0 +1,84 @@
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: user-service
+  namespace: ecommerce
+  labels:
+    app: user-service
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: microservice
+spec:
+  provider: nginx
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: user-service
+  autoscalerRef:
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscaler
+    name: user-service-hpa
+  ingressRef:
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    name: ecommerce-ingress
+  progressDeadlineSeconds: 180
+  service:
+    port: 8081
+    targetPort: 8081
+    name: user-service
+    trafficPolicy:
+      tls:
+        mode: DISABLE
+  analysis:
+    interval: 1m
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+      - name: "request-success-rate"
+        templateRef:
+          name: request-success-rate
+          namespace: ecommerce
+        thresholdRange:
+          min: 99
+        interval: 1m
+      - name: "request-duration"
+        templateRef:
+          name: request-duration
+          namespace: ecommerce
+        thresholdRange:
+          max: 400
+        interval: 1m
+      - name: "circuit-breaker-open-state"
+        templateRef:
+          name: circuit-breaker-open-state
+          namespace: ecommerce
+        thresholdRange:
+          max: 0
+        interval: 1m
+    webhooks:
+      - name: "pre-rollout-health-check"
+        type: pre-rollout
+        url: "http://flagger-loadtester.flagger-system/actuator-check"
+        timeout: 10s
+        metadata:
+          type: bash
+          cmd: "curl -s -f http://user-service-canary.ecommerce:8081/actuator/health/readiness"
+      - name: "canary-synthetic-traffic"
+        type: rollout
+        url: "http://flagger-loadtester.flagger-system/"
+        timeout: 5s
+        metadata:
+          type: cmd
+          cmd: "hey -z 1m -q 10 -c 2 http://ecommerce.local/api/users/profile"
+    alerts:
+      - name: "slack-canary-alerts"
+        severity: warn
+        providerRef:
+          name: flagger-slack-alerts
+          namespace: ecommerce
+      - name: "webhook-canary-alerts"
+        severity: error
+        providerRef:
+          name: flagger-webhook-alerts
+          namespace: ecommerce

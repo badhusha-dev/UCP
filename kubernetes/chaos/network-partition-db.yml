@@ -1,0 +1,28 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: network-partition-db
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: network-partition-db
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: chaos-engineering
+spec:
+  action: partition
+  mode: all
+  selector:
+    namespaces:
+      - ecommerce
+    labelSelectors:
+      app: postgres
+  direction: both
+  target:
+    selector:
+      namespaces:
+        - ecommerce
+      labelSelectors:
+        app: user-service
+    mode: all
+  duration: "45s"
+  scheduler:
+    cron: "0 */2 * * *"

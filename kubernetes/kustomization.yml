@@ -1,0 +1,59 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ecommerce
+
+resources:
+  # Base Configuration
+  - base/00-namespace.yml
+  - base/01-configmap.yml
+  - base/02-secrets.yml
+
+  # Core Infrastructure
+  - infrastructure/postgres.yml
+  - infrastructure/redis.yml
+  - infrastructure/kafka-zookeeper.yml
+
+  # Platform & Service Discovery
+  - platform/discovery-server.yml
+  - platform/config-server.yml
+
+  # Microservices
+  - services/user-service.yml
+  - services/product-service.yml
+  - services/order-service.yml
+  - services/notification-service.yml
+  - services/delivery-service.yml
+
+  # API Gateway & Ingress
+  - api/api-gateway.yml
+  - ingress/ingress.yml
+
+  # Autoscaling
+  - autoscaling/hpa.yml
+
+  # Microfrontends
+  - frontend/frontend.yml
+  - frontend/delivery-frontend.yml
+
+  # Observability & Messaging Enhancements
+  - monitoring/zipkin.yml
+  - monitoring/prometheus-grafana.yml
+  - monitoring/alertmanager.yml
+  - logging/elk.yml
+  - messaging/kafka-dlq.yml
+
+  # Security & Secret Management
+  - security/vault.yml
+  - security/network-policies.yml
+  - security/rbac-roles.yml
+  - security/pod-security-standards.yml
+
+  # Disaster Recovery & Backups
+  - database/backup-cronjob.yml
+
+  # GitOps Continuous Delivery & Progressive Canary Delivery
+  - gitops
+
+  # Enterprise Service Mesh (Istio mTLS, VirtualServices, DestinationRules & Envoy)
+  - mesh

@@ -1,0 +1,308 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: default-deny-ingress
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-gateway
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-ingress-to-gateway
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-services
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-gateway-to-services
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - user-service
+          - product-service
+          - order-service
+          - notification-service
+          - delivery-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 8081
+        - protocol: TCP
+          port: 8082
+        - protocol: TCP
+          port: 8083
+        - protocol: TCP
+          port: 8084
+        - protocol: TCP
+          port: 8091
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-inter-service
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-inter-service
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app: product-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: order-service
+      ports:
+        - protocol: TCP
+          port: 8082
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-databases
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-databases
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - postgres
+          - redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - user-service
+                  - product-service
+                  - order-service
+                  - notification-service
+                  - api-gateway
+                  - delivery-service
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-messaging
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-messaging
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - kafka
+          - zookeeper
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - order-service
+                  - notification-service
+                  - product-service
+                  - delivery-service
+                  - kafka
+                  - zookeeper
+      ports:
+        - protocol: TCP
+          port: 9092
+        - protocol: TCP
+          port: 2181
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-platform-infrastructure
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-platform-infrastructure
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - discovery-server
+          - config-server
+          - vault
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - api-gateway
+                  - user-service
+                  - product-service
+                  - order-service
+                  - notification-service
+                  - delivery-service
+                  - config-server
+      ports:
+        - protocol: TCP
+          port: 8761
+        - protocol: TCP
+          port: 8888
+        - protocol: TCP
+          port: 8200
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-observability
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-observability
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - prometheus
+                  - grafana
+                  - zipkin
+                  - logstash
+                  - elasticsearch
+                  - kibana
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8081
+        - protocol: TCP
+          port: 8082
+        - protocol: TCP
+          port: 8083
+        - protocol: TCP
+          port: 8084
+        - protocol: TCP
+          port: 8091
+        - protocol: TCP
+          port: 8761
+        - protocol: TCP
+          port: 8888
+        - protocol: TCP
+          port: 8200
+        - protocol: TCP
+          port: 9411
+        - protocol: TCP
+          port: 5000
+        - protocol: TCP
+          port: 9200
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-frontend
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - shell-mfe
+          - auth-mfe
+          - catalog-mfe
+          - cart-mfe
+          - orders-mfe
+          - mfe-delivery
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 3001
+        - protocol: TCP
+          port: 3002
+        - protocol: TCP
+          port: 3003
+        - protocol: TCP
+          port: 3004
+        - protocol: TCP
+          port: 80
