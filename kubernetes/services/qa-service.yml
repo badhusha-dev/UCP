@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qa-service
+  namespace: ecommerce
+  labels:
+    app: qa-service
+    app.kubernetes.io/component: microservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qa-service
+  template:
+    metadata:
+      labels:
+        app: qa-service
+    spec:
+      containers:
+        - name: qa-service
+          image: ecommerce/qa-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8094
+              name: http
+          envFrom:
+            - configMapRef:
+                name: ecommerce-config
+            - secretRef:
+                name: ecommerce-secrets
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres:5432/qa_db"
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-secrets
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-secrets
+                  key: POSTGRES_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-secrets
+                  key: JWT_SECRET
+            - name: QA_RUNNER_DIRECTORY
+              value: "/var/lib/qa/workspaces"
+            - name: QA_WORKSPACE_ROOT
+              value: "/workspace"
+            - name: QA_RUNNER_TIMEOUT_SECONDS
+              value: "1800"
+            - name: QA_MAVEN_EXECUTABLE
+              value: "/usr/share/maven/bin/mvn"
+            - name: QA_NODE_EXECUTABLE
+              value: "/usr/local/bin/node"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 3Gi
+          volumeMounts:
+            - name: qa-runner
+              mountPath: /var/lib/qa/workspaces
+            - name: qa-workspace
+              mountPath: /workspace
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8094
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8094
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8094
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+      volumes:
+        - name: qa-runner
+          emptyDir: {}
+        # docker-compose bind-mounts the repository here; in a cluster this is empty until a source volume is supplied,
+        # so the Quality Center can list runs but cannot execute them.
+        - name: qa-workspace
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qa-service
+  namespace: ecommerce
+  labels:
+    app: qa-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8094
+      targetPort: 8094
+      name: http
+  selector:
+    app: qa-service

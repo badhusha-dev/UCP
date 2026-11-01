@@ -129,6 +129,16 @@ spec:
                   - notification-service
                   - api-gateway
                   - delivery-service
+                  - accounting-service
+                  - analytics-service
+                  - cart-service
+                  - crm-service
+                  - error-stack-service
+                  - inventory-service
+                  - loyalty-service
+                  - procurement-service
+                  - stock-service
+                  - qa-service
       ports:
         - protocol: TCP
           port: 5432
@@ -165,6 +175,12 @@ spec:
                   - notification-service
                   - product-service
                   - delivery-service
+                  - cart-service
+                  - crm-service
+                  - error-stack-service
+                  - inventory-service
+                  - loyalty-service
+                  - stock-service
                   - kafka
                   - zookeeper
       ports:
@@ -206,6 +222,16 @@ spec:
                   - order-service
                   - notification-service
                   - delivery-service
+                  - accounting-service
+                  - analytics-service
+                  - cart-service
+                  - crm-service
+                  - error-stack-service
+                  - inventory-service
+                  - loyalty-service
+                  - procurement-service
+                  - stock-service
+                  - qa-service
                   - config-server
       ports:
         - protocol: TCP

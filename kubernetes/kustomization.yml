@@ -24,6 +24,16 @@ resources:
   - services/order-service.yml
   - services/notification-service.yml
   - services/delivery-service.yml
+  - services/accounting-service.yml
+  - services/analytics-service.yml
+  - services/cart-service.yml
+  - services/crm-service.yml
+  - services/error-stack-service.yml
+  - services/inventory-service.yml
+  - services/loyalty-service.yml
+  - services/procurement-service.yml
+  - services/stock-service.yml
+  - services/qa-service.yml
 
   # API Gateway & Ingress
   - api/api-gateway.yml
@@ -46,6 +56,7 @@ resources:
   # Security & Secret Management
   - security/vault.yml
   - security/network-policies.yml
+  - security/service-call-policies.yml
   - security/rbac-roles.yml
   - security/pod-security-standards.yml
 

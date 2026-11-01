@@ -1,0 +1,271 @@
+# Ingress paths for the ten services added to the cluster in v2.0.0 and for the callers that reach them.
+# Each rule matches a URL in backend/config-repo (docker profile). Ports are the callee's listener.
+# Pods are default-deny for ingress (network-policies.yml), so every caller/callee pair must be listed here.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-additional-services
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-gateway-to-additional-services
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - accounting-service
+          - analytics-service
+          - cart-service
+          - crm-service
+          - error-stack-service
+          - inventory-service
+          - loyalty-service
+          - procurement-service
+          - qa-service
+          - stock-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      ports:
+        - protocol: TCP
+          port: 8085
+        - protocol: TCP
+          port: 8086
+        - protocol: TCP
+          port: 8087
+        - protocol: TCP
+          port: 8088
+        - protocol: TCP
+          port: 8089
+        - protocol: TCP
+          port: 8090
+        - protocol: TCP
+          port: 8091
+        - protocol: TCP
+          port: 8092
+        - protocol: TCP
+          port: 8093
+        - protocol: TCP
+          port: 8094
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-callers-to-order-service
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-callers-to-order-service
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app: order-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - accounting-service
+                  - analytics-service
+                  - crm-service
+                  - product-service
+      ports:
+        - protocol: TCP
+          port: 8083
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-analytics-to-product-service
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-analytics-to-product-service
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app: product-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: analytics-service
+      ports:
+        - protocol: TCP
+          port: 8082
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-callers-to-stock-service
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-callers-to-stock-service
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app: stock-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - order-service
+                  - product-service
+                  - procurement-service
+                  - inventory-service
+      ports:
+        - protocol: TCP
+          port: 8090
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-callers-to-inventory-service
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-callers-to-inventory-service
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app: inventory-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - analytics-service
+                  - procurement-service
+                  - stock-service
+      ports:
+        - protocol: TCP
+          port: 8085
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-procurement-to-accounting-service
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-procurement-to-accounting-service
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app: accounting-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: procurement-service
+      ports:
+        - protocol: TCP
+          port: 8088
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-identity-lookups-to-user-service
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-identity-lookups-to-user-service
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app: user-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - accounting-service
+                  - delivery-service
+                  - inventory-service
+                  - procurement-service
+      ports:
+        - protocol: TCP
+          port: 8081
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-order-to-cart-service
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-order-to-cart-service
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app: cart-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: order-service
+      ports:
+        - protocol: TCP
+          port: 8086
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-crm-to-loyalty-service
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: allow-crm-to-loyalty-service
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+spec:
+  podSelector:
+    matchLabels:
+      app: loyalty-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: crm-service
+      ports:
+        - protocol: TCP
+          port: 8087
