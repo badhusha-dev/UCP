@@ -53,6 +53,21 @@ Use the same `docker compose -p ucp --env-file .env --env-file scripts/dev-seed/
 - `http://localhost:8761` shows the registered services.
 - `http://localhost:3000` serves the shell, and `http://localhost:3000/api/products` returns the catalog through the shell's nginx proxy.
 - Super Admin sign-in: `POST http://localhost:8080/api/users/login` with the email and password from the secrets file.
+- RBAC test accounts: after Flyway has completed, apply the dev-only seed described in [RBAC test users](../saas/RBAC_TEST_USERS.md).
+
+```bash
+docker exec -i ucp-postgres-1 psql -v ON_ERROR_STOP=1 -U ecommerce_admin -d user_db \
+  < scripts/dev-seed/rbac-users.sql
+```
+
+This seed is idempotent. It creates 33 test users (one per RBAC role including `QA_ANALYST` from V18), adds them to the legacy tenant, enables all ACTIVE applications on that tenant, and creates application grants and role assignments so each user can log in via `POST /api/users/login/application` with `"tenantSlug": "legacy"` immediately.
+
+Verify the accounts with:
+
+```bash
+docker exec -i ucp-postgres-1 psql -U ecommerce_admin -d user_db \
+  -c "SELECT email, role FROM users WHERE email LIKE 'rbac.%@ucp-rbac.test' ORDER BY role;"
+```
 
 ## 5. Stop
 
