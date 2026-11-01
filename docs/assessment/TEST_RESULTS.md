@@ -10,7 +10,8 @@ Recorded 2026-11-01 on `feature/ucp-completion-modernization`. Each row is a com
 | product-service | `mvnw -pl product-service test` | 83 run, 0 failed (`BUILD SUCCESS`) |
 | accounting-service Postgres | `mvnw -pl accounting-service test -Dtest=AccountingTenantIsolationPostgresTest` | 5 run, 0 failed (Flyway reached V19) |
 | delivery-service Postgres | `mvnw -pl delivery-service test -Dtest=DeliveryTenantIsolationPostgresIntegrationTest` | 6 run, 0 failed (Flyway V1 to V2) |
-| user-service Postgres | `mvnw -pl user-service test -Dtest=TenantAccessPostgresIntegrationTest` | 1 run, **1 failed** at line 109 (B-38). Remaining assertions not reached. |
+| user-service Postgres | `mvnw -pl user-service test -Dtest=TenantAccessPostgresIntegrationTest` | Before the B-38 fix: 1 run, **1 failed** at line 109; remaining assertions not reached. After `f216d479`: 2 run, 0 failed, including the original test to its end and a new negative test. |
+| user-service, all tests | `mvnw -pl user-service test`, with `UCP_TEST_POSTGRES_URL` set to a scratch database | 19 run, 0 failed (`BUILD SUCCESS`) |
 | inventory-service | `mvnw -pl inventory-service -am test`, with `UCP_TEST_INVENTORY_POSTGRES_URL` set | inventory 29 run, 0 failed; outbox 10 run, 0 failed (Flyway V1 to V5) |
 | Migrations, stock, cart, loyalty, order | `psql -v ON_ERROR_STOP=1` in version order into scratch databases | All files apply. **Not a Flyway run**; no tests. |
 

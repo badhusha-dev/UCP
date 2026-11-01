@@ -306,3 +306,11 @@ Next action
 - Modules: 18 of 19 succeed. user-service fails on the single B-38 assertion in `TenantAccessPostgresIntegrationTest` (line 109). The assertions after line 109 did not run, so that test's remaining checks are still unverified. Every other test in the run passed.
 - Postgres-gated classes in this run: accounting 5 (pass), delivery 6 (pass), inventory 9 and 11 in its two Postgres-enabled classes (pass), user-service 1 (fail, B-38). The inventory module total is 29, including its H2 classes. The outbox module's 10 tests are included in the 427.
 - Because the Postgres classes are included, this run covers both the Postgres and H2 paths in each module.
+
+### B-38 fixed by owner decision (2026-11-01, commit `f216d479`)
+
+- Decision: a warehouse operator's Inventory access includes goods receipt (`goods-receipt:manage`) and purchase-order view (`purchase-order:view`).
+- Change: `TenantAccessService.grantApplication`. An INVENTORY grant needs `inventory:view` or `inventory:read`, and may carry only inventory and warehouse permissions plus those two procurement permissions. Other permissions are still refused.
+- Tests: new `TenantAccessPostgresIntegrationTest.inventoryGrantAcceptsWarehouseOperatorAndRefusesRolesOutsideTheRuleInPostgres` (ADMIN, INVENTORY_MANAGER, INVENTORY_ANALYST and PROCUREMENT_MANAGER refused; WAREHOUSE_OPERATOR accepted). The existing tenant-access test now runs to its end. user-service: 19 run, 0 failed, against `ucp_scratch_b38_user`.
+- Still refused: INVENTORY_MANAGER and INVENTORY_ANALYST, which hold `supplier:view` (OPEN_ISSUES 1b, owner decision).
+- Not verified: procurement-service accepting `goods-receipt:manage` from an INVENTORY-scoped token. The app token now carries the permission; whether procurement honours it through the gateway was not tested.

@@ -6,7 +6,8 @@ Recorded 2026-11-01. Each item names the record it comes from and who must act. 
 
 | # | Issue | Source | What is needed |
 |---|---|---|---|
-| 1 | A warehouse operator's Inventory access cannot be granted, and no seeded role passes the INVENTORY grant rule (B-38). | BUGS_AND_TECHNICAL_DEBT B-38; TEST_RESULTS | Whether warehouse operators should have goods receipt and PO view in their Inventory access. Yes: widen the rule. No: trim the role in a new migration. |
+| 1 | Closed 2026-11-01 (B-38, commit `f216d479`): warehouse operators can receive INVENTORY access with goods receipt and PO view. | BUGS_AND_TECHNICAL_DEBT B-38 | None. |
+| 1b | INVENTORY_MANAGER and INVENTORY_ANALYST are still refused, because they hold `supplier:view`. Should Inventory access also include supplier view? | BUGS_AND_TECHNICAL_DEBT B-38 | Yes: add `supplier:view` to the allowed set. No: leave them refused. |
 | 2 | Default catalog and AI chat return active products from every tenant without a token (SECURITY_ASSESSMENT). | SECURITY_ASSESSMENT, finding 2 | Whether the default (no storefront) catalog should be limited to the legacy tenant, or should stay cross-tenant by design. |
 | 3 | Signing key storage for JWT (B-05, K10). | BUGS_AND_TECHNICAL_DEBT | Vault or a Kubernetes Secret. |
 | 4 | Payment provider (B-01). | BUGS_AND_TECHNICAL_DEBT | Choice of PSP. |
