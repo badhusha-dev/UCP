@@ -42,9 +42,9 @@ be fully assessed without owner input.
 | TD-04 | Low | Frontend | 12 of 16 frontend workspaces have no test scripts. Only shared-library, mfe-product, mfe-order have `npm test`. mfe-inventory has an orphan test file with no script. | **FIXED** | `b725355e` |
 | TD-08 | Low | Frontend build | Frontend Docker images use `npm install` with no lockfile. Node version diverges: local 24.5 vs image 20. No `engines` field in any workspace `package.json`. | **FIXED** | `b725355e` (engines + node:22; `npm ci` pending lockfiles — see TODO in Dockerfile) |
 | TD-07 | Low | config-repo | `backend/config-repo` is a nested git repository with no remote and uncommitted changes. The UCP main repo does not track it. | **NEEDS REVIEW** |
-| SF-01-residual | Low | mfe-cart / mfe-order | Storefront cart is not isolated per storefront. A user browsing `?storefront=A` then `?storefront=B` retains the same cart. | **OPEN** |
-| A-04 | Low | order-service / stock-service | Stock reservation at checkout is not atomic. The order is placed before stock is reserved; a concurrent order can over-sell. | **OPEN** |
-| A-06 | Low | order-service / delivery-service | Delivery record is not created on order fulfilment. Delivery service must be triggered separately. | **OPEN** |
+| SF-01-residual | Low | mfe-cart / mfe-order | Storefront cart is not isolated per storefront. A user browsing `?storefront=A` then `?storefront=B` retains the same cart. | **FIXED** | `5c32eb21` |
+| A-04 | Low | order-service / stock-service | Stock reservation at checkout is not atomic. The order is placed before stock is reserved; a concurrent order can over-sell. | **FIXED** | `5c32eb21` (JPA @Version + V5 migration + 409 at controller layer) |
+| A-06 | Low | order-service / delivery-service | Delivery record is not created on order fulfilment. Delivery service must be triggered separately. | **FIXED** | `5c32eb21` (new /internal/delivery/auto-create; FulfillmentService.ship() triggers best-effort after commit) |
 
 ---
 
@@ -75,5 +75,5 @@ be fully assessed without owner input.
 | Critical | 0 | 0 | 0 | 0 |
 | High | 0 | 2 | 0 | 0 |
 | Medium | 0 | 8 | 0 | 1 |
-| Low / Tech debt | 5 | 2 | 0 | 2 |
-| **Total** | **5** | **12** | **0** | **3** |
+| Low / Tech debt | 2 | 5 | 0 | 2 |
+| **Total** | **2** | **15** | **0** | **3** |
