@@ -976,7 +976,7 @@ export default function ProductPage() {
                       alt={item.name}
                       sx={{ width: '100%', height: 110, objectFit: 'cover', borderRadius: 1.5, mb: 1 }}
                     />
-                    <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.85rem', noWrap: true }}>
+                    <Typography variant="body2" noWrap sx={{ fontWeight: 700, fontSize: '0.85rem' }}>
                       {item.name}
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#4F46E5', fontWeight: 800 }}>

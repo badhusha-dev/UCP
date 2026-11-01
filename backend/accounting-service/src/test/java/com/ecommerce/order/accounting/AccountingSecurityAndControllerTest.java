@@ -238,6 +238,21 @@ public class AccountingSecurityAndControllerTest {
     }
 
     @Test
+    @DisplayName("Internal Endpoint: Supplier payable with a wrong or missing service token returns 401")
+    void testInternalAccountingRefusesWrongServiceToken() throws Exception {
+        mockMvc.perform(post("/internal/accounting/supplier-payables")
+                        .header("X-Service-Token", "wrong-service-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/internal/accounting/supplier-payables")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("Admin Endpoint: Admin role can post manual adjustment and view audit trail")
     void testAdminManualAdjustmentAndAuditLogs() throws Exception {
         ManualAdjustmentRequest request = ManualAdjustmentRequest.builder()

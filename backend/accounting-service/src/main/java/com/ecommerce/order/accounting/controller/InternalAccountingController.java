@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Map;
 
 @RestController
@@ -25,14 +27,20 @@ public class InternalAccountingController {
     @PostMapping("/supplier-credit-notes")
     public Map<String, Object> recordSupplierCreditNote(@RequestHeader(value = "X-Service-Token", required = false) String token,
                                                         @RequestBody Map<String, Object> request) {
-        if (token == null || !token.equals(serviceToken)) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Valid service token required.");
+        requireServiceToken(token);
         return service.recordSupplierCreditNote(request);
     }
 
     @PostMapping("/supplier-payables")
     public Map<String, Object> recordSupplierPayable(@RequestHeader(value = "X-Service-Token", required = false) String token,
                                                      @RequestBody Map<String, Object> request) {
-        if (token == null || !token.equals(serviceToken)) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Valid service token required.");
+        requireServiceToken(token);
         return service.recordSupplierInvoice(request);
+    }
+
+    private void requireServiceToken(String token) {
+        if (token == null || !MessageDigest.isEqual(token.getBytes(StandardCharsets.UTF_8), serviceToken.getBytes(StandardCharsets.UTF_8))) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Valid service token required.");
+        }
     }
 }
