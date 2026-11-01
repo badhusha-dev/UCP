@@ -27,7 +27,7 @@ public class PricingClient {
     @Value("${pricing.integration.tenant-id:}") private String tenantId;
     @Value("${pricing.integration.currency:USD}") private String currency;
     @Value("${services.product.url:http://localhost:8082}") private String productServiceUrl;
-    @Value("${SERVICE_TO_SERVICE_TOKEN:local-dev-service-token-change-me}") private String serviceToken;
+    @Value("${SERVICE_TO_SERVICE_TOKEN}") private String serviceToken;
 
     public PricingClient(RestTemplate restTemplate) { this.restTemplate = restTemplate; }
 

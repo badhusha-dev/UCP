@@ -311,7 +311,7 @@ public class AccountingService {
     public LedgerTransactionDto getTransactionById(Long id) {
         return ledgerInTenant(id)
                 .map(this::toDto)
-                .orElseThrow(() -> new IllegalArgumentException("Ledger transaction not found with ID: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ledger transaction not found with ID: " + id));
     }
 
     /**
@@ -404,7 +404,7 @@ public class AccountingService {
         }
 
         LedgerTransaction original = ledgerInTenant(transactionId)
-                .orElseThrow(() -> new IllegalArgumentException("Transaction #" + transactionId + " not found."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction #" + transactionId + " not found."));
 
         if (original.getTransactionType() == TransactionType.REVERSAL) {
             throw new IllegalStateException("Cannot reverse a reversal transaction.");

@@ -20,7 +20,7 @@ public class StockServiceClient {
     @Value("${services.stock.url:http://localhost:8090}")
     private String stockUrl;
 
-    @Value("${SERVICE_TO_SERVICE_TOKEN:local-dev-service-token-change-me}")
+    @Value("${SERVICE_TO_SERVICE_TOKEN}")
     private String serviceToken;
 
     public List<Map<String, Object>> lowStockItems() {

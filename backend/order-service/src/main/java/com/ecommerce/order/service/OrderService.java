@@ -44,7 +44,7 @@ public class OrderService {
     @Value("${services.stock.url:http://localhost:8090}")
     private String stockServiceUrl;
 
-    @Value("${SERVICE_TO_SERVICE_TOKEN:local-dev-service-token-change-me}")
+    @Value("${SERVICE_TO_SERVICE_TOKEN}")
     private String serviceToServiceToken;
 
     @Transactional

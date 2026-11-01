@@ -23,7 +23,7 @@ public class StockInternalController {
 
     private final StockService stockService;
 
-    @Value("${SERVICE_TO_SERVICE_TOKEN:local-dev-service-token-change-me}")
+    @Value("${SERVICE_TO_SERVICE_TOKEN}")
     private String serviceToken;
 
     @PutMapping("/metadata/{productId}")

@@ -19,7 +19,7 @@ import java.util.Map;
 public class InternalAccountingController {
     private final SupplierPayablesService service;
 
-    @Value("${SERVICE_TO_SERVICE_TOKEN:local-dev-service-token-change-me}")
+    @Value("${SERVICE_TO_SERVICE_TOKEN}")
     private String serviceToken;
 
     @PostMapping("/supplier-credit-notes")

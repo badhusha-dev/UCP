@@ -18,7 +18,7 @@ public class AccountingServiceClient {
     @Value("${services.accounting.url:http://localhost:8088}")
     private String accountingUrl;
 
-    @Value("${SERVICE_TO_SERVICE_TOKEN:local-dev-service-token-change-me}")
+    @Value("${SERVICE_TO_SERVICE_TOKEN}")
     private String serviceToken;
 
     public Map<String, Object> recordSupplierPayable(Map<String, Object> request) {

@@ -200,6 +200,44 @@ public class AccountingSecurityAndControllerTest {
     }
 
     @Test
+    @DisplayName("Customer Endpoint: Unknown ledger entry returns 404 rather than a server error")
+    void testUnknownLedgerEntryReturns404() throws Exception {
+        mockMvc.perform(get("/api/accounting/ledger/987654321")
+                        .header("X-User-Id", 42L)
+                        .header("X-User-Role", "ROLE_USER"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Admin Endpoint: Reversing an unknown transaction returns 404 rather than a server error")
+    void testReverseUnknownTransactionReturns404() throws Exception {
+        mockMvc.perform(post("/api/accounting/admin/reversals/987654321")
+                        .header("Authorization", platformToken(1L, "ROLE_ADMIN", "admin@ecommerce.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"Customer request\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Admin Endpoint: Adjustment without a reference is rejected with 400 rather than a server error")
+    void testAdjustmentWithoutReferenceReturns400() throws Exception {
+        ManualAdjustmentRequest request = ManualAdjustmentRequest.builder()
+                .userId(15L)
+                .transactionType(TransactionType.MANUAL_CREDIT)
+                .amount(new BigDecimal("50.00"))
+                .currency("USD")
+                .reason("Customer goodwill credit")
+                .build();
+
+        mockMvc.perform(post("/api/accounting/admin/adjustments")
+                        .header("Authorization", platformToken(1L, "ROLE_ADMIN", "admin@ecommerce.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is("Reference is required for manual adjustments.")));
+    }
+
+    @Test
     @DisplayName("Admin Endpoint: Admin role can post manual adjustment and view audit trail")
     void testAdminManualAdjustmentAndAuditLogs() throws Exception {
         ManualAdjustmentRequest request = ManualAdjustmentRequest.builder()

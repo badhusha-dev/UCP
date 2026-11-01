@@ -27,7 +27,7 @@ public class StockController {
 
     private final StockService inventoryService;
 
-    @Value("${SERVICE_TO_SERVICE_TOKEN:local-dev-service-token-change-me}")
+    @Value("${SERVICE_TO_SERVICE_TOKEN}")
     private String serviceToken;
 
     @Operation(summary = "Get Product Stock Status", description = "Retrieves authoritative stock availability for a catalog item.")

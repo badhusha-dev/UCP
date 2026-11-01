@@ -225,7 +225,7 @@ public class StockServiceIntegrationTest {
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(get("/internal/stock/low-stock").header("X-Service-Token", "local-dev-service-token-change-mE"))
                 .andExpect(status().isUnauthorized());
-        mockMvc.perform(get("/internal/stock/low-stock").header("X-Service-Token", "local-dev-service-token-change-me"))
+        mockMvc.perform(get("/internal/stock/low-stock").header("X-Service-Token", "test-service-token"))
                 .andExpect(status().isOk());
     }
 }

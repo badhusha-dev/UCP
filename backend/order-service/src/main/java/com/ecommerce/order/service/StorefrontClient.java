@@ -23,7 +23,7 @@ public class StorefrontClient {
     private final RestTemplate restTemplate;
 
     @Value("${services.product.url:http://localhost:8082}") private String productServiceUrl;
-    @Value("${SERVICE_TO_SERVICE_TOKEN:local-dev-service-token-change-me}") private String serviceToken;
+    @Value("${SERVICE_TO_SERVICE_TOKEN}") private String serviceToken;
 
     public StorefrontClient(RestTemplate restTemplate) { this.restTemplate = restTemplate; }
 
