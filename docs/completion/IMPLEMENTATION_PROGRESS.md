@@ -292,3 +292,9 @@ Next action
 - Result: stock V1 to V4 (4 files), cart V1 to V2 (2), loyalty V1 to V2 (2), order V1 and V4 to V11 (8). All applied without error.
 - Limits: this is not a Flyway run, so `flyway_schema_history` was not written, and no entity validation or test ran. It shows the SQL applies, not that the services start.
 - Observation: order-service has no V2 or V3 file; the sequence goes from V1 to V4. Flyway accepts gaps, so this is not an error, but the reason is not recorded in the repository.
+
+### B-38 correction (2026-11-01)
+
+- An earlier note in this log said that allowing module-scoped permissions would let `WAREHOUSE_OPERATOR` through. That was wrong: the role also holds procurement permissions (`goods-receipt:manage`, `purchase-order:view`), so a module-scoped rule still refuses it.
+- Checked against the scratch database: no seeded role passes the INVENTORY rule today. The rule requires `inventory:read` and only `inventory:` permissions. Roles that have `inventory:read` also have non-inventory permissions. V13 roles hold `inventory:view` instead. Details are in BUGS_AND_TECHNICAL_DEBT B-38.
+- The owner's decision is whether a warehouse operator's Inventory access includes goods receipt and purchase-order view. Yes: widen the rule to the V13 vocabulary. No: trim the role in a new migration.
