@@ -3,6 +3,7 @@ package com.ecommerce.user.controller;
 import com.ecommerce.user.model.User;
 import com.ecommerce.user.repository.UserRepository;
 import com.ecommerce.user.security.JwtUtil;
+import com.ecommerce.user.service.LoginAttemptService;
 import com.ecommerce.user.service.RbacService;
 import com.ecommerce.user.service.TenantAccessService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,12 +32,20 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final RbacService rbacService;
     private final TenantAccessService tenantAccessService;
+    private final LoginAttemptService loginAttempts;
 
-    @Operation(summary = "Authenticate User", description = "Authenticates credentials and returns a signed JWT token.", security = {})
+    private static final String ACCOUNT_LOCKED = "Account temporarily locked after repeated failed sign-in attempts. Try again later.";
+
+    @Operation(summary = "Authenticate User", description = "Authenticates credentials and returns a signed JWT token. "
+            + "Repeated failed attempts lock the account temporarily.", security = {})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Authentication successful, JWT token issued",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid email or password",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "User account deactivated",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "423", description = "Account temporarily locked after repeated failed attempts",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request payload")
     })
@@ -46,9 +55,14 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new ErrorResponse("Email and password are required"));
         }
         User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase(Locale.ROOT)).orElse(null);
+        if (user != null && loginAttempts.isLocked(user)) {
+            return ResponseEntity.status(HttpStatus.LOCKED).body(new ErrorResponse(ACCOUNT_LOCKED));
+        }
         if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            if (user != null) loginAttempts.recordFailure(user);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Invalid email or password"));
         }
+        loginAttempts.recordSuccess(user);
 
         if (!user.isActive()) {
             return ResponseEntity.status(403).body(new ErrorResponse("Account is deactivated"));
@@ -58,7 +72,8 @@ public class AuthController {
         return ResponseEntity.ok(new AuthResponse(token));
     }
 
-    @Operation(summary = "Authenticate into one client application", description = "Verifies tenant membership, application entitlement and the user's application grant before issuing a short-lived scoped token.", security = {})
+    @Operation(summary = "Authenticate into one client application", description = "Verifies tenant membership, application entitlement and the user's application grant before issuing a short-lived scoped token. "
+            + "Shares the failed-attempt lockout with /login; a locked account receives 423.", security = {})
     @PostMapping("/login/application")
     public ResponseEntity<?> loginToApplication(@RequestBody ApplicationLoginRequest request) {
         if (request.getEmail() == null || request.getPassword() == null
@@ -66,9 +81,14 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new ErrorResponse("Email, password, application code and client slug are required"));
         }
         User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase(Locale.ROOT)).orElse(null);
+        if (user != null && loginAttempts.isLocked(user)) {
+            return ResponseEntity.status(HttpStatus.LOCKED).body(new ErrorResponse(ACCOUNT_LOCKED));
+        }
         if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            if (user != null) loginAttempts.recordFailure(user);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Invalid email or password"));
         }
+        loginAttempts.recordSuccess(user);
         if (!user.isActive()) return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse("Account is deactivated"));
 
         TenantAccessService.ApplicationAccess access = tenantAccessService.requireApplicationAccess(

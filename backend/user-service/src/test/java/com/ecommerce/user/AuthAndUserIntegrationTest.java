@@ -15,6 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,6 +58,97 @@ public class AuthAndUserIntegrationTest {
         jdbcTemplate.update("INSERT INTO access_roles(role_key, display_name, hierarchy_level, system_role) VALUES('SUPER_ADMIN', 'Super Admin', 1000, TRUE), ('ADMIN', 'Administrator', 800, TRUE), ('MANAGER', 'Manager', 500, TRUE), ('USER', 'Standard User', 100, TRUE)");
         jdbcTemplate.update("INSERT INTO access_permissions(permission_key, module_name, description) VALUES('roles:manage', 'roles', 'Manage delegated roles')");
         jdbcTemplate.update("INSERT INTO access_role_permissions(role_key, permission_key) VALUES('ADMIN', 'roles:manage')");
+    }
+
+    private User saveActiveUser(String email, String password) {
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setName("Lockout Tester");
+        user.setRole("USER");
+        user.setActive(true);
+        return userRepository.save(user);
+    }
+
+    private int loginStatus(String email, String password) throws Exception {
+        Map<String, String> body = new HashMap<>();
+        body.put("email", email);
+        body.put("password", password);
+        return mockMvc.perform(post("/api/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andReturn().getResponse().getStatus();
+    }
+
+    @Test
+    @DisplayName("POST /api/users/login locks the account after five failed attempts, even for the correct password")
+    void testLockoutAfterRepeatedFailures() throws Exception {
+        User user = saveActiveUser("lock.me@ecommerce.com", "correct-password-123");
+        for (int attempt = 0; attempt < 5; attempt++) {
+            assertThat(loginStatus("lock.me@ecommerce.com", "wrong-password")).isEqualTo(401);
+        }
+
+        mockMvc.perform(post("/api/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("email", "lock.me@ecommerce.com", "password", "correct-password-123"))))
+                .andExpect(status().isLocked())
+                .andExpect(jsonPath("$.error").value(org.hamcrest.Matchers.containsString("temporarily locked")));
+
+        User locked = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(locked.getLockedUntil()).isAfter(Instant.now());
+        assertThat(locked.getFailedLoginAttempts()).isZero();
+    }
+
+    @Test
+    @DisplayName("A successful sign-in clears earlier failures, so they do not count towards a later lockout")
+    void testSuccessfulLoginResetsFailures() throws Exception {
+        User user = saveActiveUser("reset.me@ecommerce.com", "correct-password-123");
+        for (int attempt = 0; attempt < 4; attempt++) {
+            assertThat(loginStatus("reset.me@ecommerce.com", "wrong-password")).isEqualTo(401);
+        }
+        assertThat(loginStatus("reset.me@ecommerce.com", "correct-password-123")).isEqualTo(200);
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getFailedLoginAttempts()).isZero();
+
+        for (int attempt = 0; attempt < 4; attempt++) {
+            assertThat(loginStatus("reset.me@ecommerce.com", "wrong-password")).isEqualTo(401);
+        }
+        assertThat(loginStatus("reset.me@ecommerce.com", "correct-password-123")).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("An expired lock no longer blocks sign-in and is cleared on success")
+    void testExpiredLockAllowsLogin() throws Exception {
+        User user = saveActiveUser("expired.lock@ecommerce.com", "correct-password-123");
+        user.setLockedUntil(Instant.now().minus(1, ChronoUnit.MINUTES));
+        userRepository.save(user);
+
+        assertThat(loginStatus("expired.lock@ecommerce.com", "correct-password-123")).isEqualTo(200);
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getLockedUntil()).isNull();
+    }
+
+    @Test
+    @DisplayName("POST /api/users/login/application refuses a locked account before checking tenant access")
+    void testApplicationLoginRefusesLockedAccount() throws Exception {
+        User user = saveActiveUser("locked.app@ecommerce.com", "correct-password-123");
+        user.setLockedUntil(Instant.now().plus(10, ChronoUnit.MINUTES));
+        userRepository.save(user);
+
+        mockMvc.perform(post("/api/users/login/application")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "locked.app@ecommerce.com",
+                                "password", "correct-password-123",
+                                "applicationCode", "ACCOUNTING",
+                                "tenantSlug", "any-tenant"))))
+                .andExpect(status().isLocked());
+    }
+
+    @Test
+    @DisplayName("Repeated failures for an unknown email return 401 every time")
+    void testUnknownEmailIsNeverLocked() throws Exception {
+        for (int attempt = 0; attempt < 6; attempt++) {
+            assertThat(loginStatus("nobody@ecommerce.com", "wrong-password")).isEqualTo(401);
+        }
     }
 
     @Test
