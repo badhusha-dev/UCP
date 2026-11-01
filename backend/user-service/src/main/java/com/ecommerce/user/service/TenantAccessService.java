@@ -134,6 +134,15 @@ public class TenantAccessService {
         return Map.of("tenantId", tenantId.toString(), "userId", user.getId(), "email", user.getEmail(), "status", "ACTIVE");
     }
 
+    /** Procurement permissions an Inventory grant may carry: a warehouse operator receives stock with them. */
+    private static final Set<String> INVENTORY_PROCUREMENT_PERMISSIONS = Set.of("goods-receipt:manage", "purchase-order:view");
+
+    /** Inventory and warehouse permissions (module "inventory" in V13), plus the procurement pair above. */
+    private static boolean isInventoryPermission(String permission) {
+        return permission.startsWith("inventory:") || permission.startsWith("warehouse:")
+                || INVENTORY_PROCUREMENT_PERMISSIONS.contains(permission);
+    }
+
     @Transactional
     public void grantApplication(UUID tenantId, String email, String applicationCode, String roleKey, Long actorId, String actorEmail) {
         String app = normalizeApplicationCode(applicationCode);
@@ -153,10 +162,10 @@ public class TenantAccessService {
         }
         if ("INVENTORY".equals(app)) {
             Set<String> permissions = rbac.permissionsFor(role);
-            if (!permissions.contains("inventory:read")
-                    || permissions.stream().anyMatch(permission -> !permission.startsWith("inventory:"))) {
+            boolean readAccess = permissions.contains("inventory:view") || permissions.contains("inventory:read");
+            if (!readAccess || permissions.stream().anyMatch(permission -> !isInventoryPermission(permission))) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "The assigned role must include Inventory read access and contain only Inventory permissions.");
+                        "The assigned role must include Inventory read access and contain only Inventory permissions, goods receipt and purchase-order view.");
             }
         }
         if ("DELIVERY_OPS".equals(app)) {

@@ -146,6 +146,32 @@ class TenantAccessPostgresIntegrationTest {
         assertThat(tenantB).isNotEqualTo(tenantA);
     }
 
+    @Test
+    void inventoryGrantAcceptsWarehouseOperatorAndRefusesRolesOutsideTheRuleInPostgres() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        User root = createUser("root-rule-" + suffix + "@ucp.test", "Platform Root", "SUPER_ADMIN");
+        User staff = createUser("staff-rule-" + suffix + "@ucp.test", "Staff Member", "USER");
+        String rootToken = jwt.generateToken(root.getId(), root.getEmail(), root.getName(), root.getRole(), Set.of("*"));
+        String tenant = createTenant(rootToken, "Rule Client", "rule-client-" + suffix);
+        mvc.perform(put("/api/platform/tenants/{tenantId}/applications/INVENTORY", tenant)
+                        .header("Authorization", bearer(rootToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enabled\":true}"))
+                .andExpect(status().isNoContent());
+        addMember(rootToken, tenant, staff.getEmail());
+
+        // Roles with any permission outside inventory, warehouse, goods receipt and PO view are refused.
+        for (String role : java.util.List.of("ADMIN", "INVENTORY_MANAGER", "INVENTORY_ANALYST", "PROCUREMENT_MANAGER")) {
+            mvc.perform(put("/api/platform/tenants/{tenantId}/memberships/{email}/applications/INVENTORY", tenant, staff.getEmail())
+                            .header("Authorization", bearer(rootToken)).contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"roleKey\":\"" + role + "\"}"))
+                    .andExpect(status().isBadRequest());
+        }
+        mvc.perform(put("/api/platform/tenants/{tenantId}/memberships/{email}/applications/INVENTORY", tenant, staff.getEmail())
+                        .header("Authorization", bearer(rootToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roleKey\":\"WAREHOUSE_OPERATOR\"}"))
+                .andExpect(status().isNoContent());
+    }
+
     private User createUser(String email, String name, String role) {
         User user = new User();
         user.setEmail(email);
