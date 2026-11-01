@@ -75,7 +75,6 @@ class ReturnsApiIntegrationTest {
     void reset() {
         wipe();
         doNothing().when(grants).requireCurrentGrant(anyString());
-        when(producer.publishOrderEvent(any())).thenReturn(CompletableFuture.completedFuture(null));
         when(catalog.categories(any())).thenReturn(Map.of());
         when(catalog.product(anyLong())).thenAnswer(i -> Optional.of(new CatalogClient.ProductInfo(i.getArgument(0), "Product " + i.getArgument(0), new BigDecimal("10.00"), null, true)));
         when(catalog.availableStock(anyLong())).thenReturn(OptionalInt.of(100));

@@ -1,5 +1,7 @@
 package com.ecommerce.outbox;
 
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,16 +11,21 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import javax.sql.DataSource;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Wires the outbox into any service that has it on the classpath.
@@ -61,12 +68,28 @@ public class OutboxAutoConfiguration {
     @ConditionalOnProperty(prefix = "ucp.outbox.publisher", name = "enabled", havingValue = "true", matchIfMissing = true)
     @SuppressWarnings("unchecked")
     OutboxPublisher outboxPublisher(OutboxRepository repository, KafkaTemplate<?, ?> kafka,
+                                    ObjectProvider<KafkaProperties> kafkaProperties,
+                                    ObjectProvider<SslBundles> sslBundles,
                                     @Value("${ucp.outbox.batch-size:50}") int batchSize,
                                     @Value("${ucp.outbox.send-timeout:PT10S}") Duration sendTimeout,
                                     @Value("${ucp.outbox.lock-duration:PT60S}") Duration lockDuration,
                                     @Value("${ucp.outbox.retention:P7D}") Duration retention) {
-        return new OutboxPublisher(repository, (KafkaTemplate<Object, Object>) kafka, Clock.systemUTC(), batchSize,
+        return new OutboxPublisher(repository, (KafkaTemplate<Object, Object>) kafka,
+                rawTemplate(kafkaProperties.getIfAvailable(), sslBundles.getIfAvailable()), Clock.systemUTC(), batchSize,
                 sendTimeout, lockDuration, retention);
+    }
+
+    /**
+     * A string-serializer template built from the service's own spring.kafka settings, for RAW events. It is not a bean:
+     * a second KafkaTemplate bean would make the services' own KafkaTemplate injection ambiguous. The publisher closes
+     * its producer factory on shutdown.
+     */
+    static KafkaTemplate<String, String> rawTemplate(KafkaProperties properties, SslBundles sslBundles) {
+        if (properties == null) return null;
+        Map<String, Object> config = new HashMap<>(properties.buildProducerProperties(sslBundles));
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        return new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(config));
     }
 
     static class OutboxSchemaInitializer implements InitializingBean {

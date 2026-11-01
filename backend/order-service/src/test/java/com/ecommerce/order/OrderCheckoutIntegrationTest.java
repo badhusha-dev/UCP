@@ -58,7 +58,6 @@ public class OrderCheckoutIntegrationTest {
         if (returnRepository != null) returnRepository.deleteAll();
         if (trackingRepository != null) trackingRepository.deleteAll();
         orderRepository.deleteAll();
-        when(orderProducerService.publishOrderEvent(any())).thenReturn(CompletableFuture.completedFuture(null));
     }
 
     @Test

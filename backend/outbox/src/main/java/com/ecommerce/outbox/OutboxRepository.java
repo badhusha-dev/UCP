@@ -19,20 +19,23 @@ public class OutboxRepository {
         this.jdbc = jdbc;
     }
 
-    void insert(UUID eventId, UUID tenantId, String topic, String key, String eventType, String payload, Instant now) {
+    void insert(UUID eventId, UUID tenantId, String topic, String key, String eventType, String payload, boolean raw,
+                Instant now) {
         jdbc.update("INSERT INTO outbox_events (event_id, tenant_id, topic, message_key, event_type, payload, status, "
-                        + "attempt_count, next_attempt_at, created_at) VALUES (?, ?, ?, ?, ?, ?, 'NEW', 0, ?, ?)",
+                        + "attempt_count, next_attempt_at, created_at, payload_format) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, 'NEW', 0, ?, ?, ?)",
                 eventId.toString(), tenantId == null ? null : tenantId.toString(), topic, key, eventType, payload,
-                ts(now), ts(now));
+                ts(now), ts(now), raw ? "RAW" : "TEMPLATE");
     }
 
     List<OutboxEvent> findDue(Instant now, int limit) {
-        return jdbc.query("SELECT event_id, topic, message_key, event_type, payload, attempt_count FROM outbox_events "
+        return jdbc.query("SELECT event_id, topic, message_key, event_type, payload, attempt_count, payload_format "
+                        + "FROM outbox_events "
                         + "WHERE (status = 'NEW' AND next_attempt_at <= ?) OR (status = 'IN_FLIGHT' AND locked_until < ?) "
                         + "ORDER BY created_at LIMIT ?",
                 (rs, row) -> new OutboxEvent(UUID.fromString(rs.getString("event_id")), rs.getString("topic"),
                         rs.getString("message_key"), rs.getString("event_type"), rs.getString("payload"),
-                        rs.getInt("attempt_count")),
+                        rs.getInt("attempt_count"), "RAW".equals(rs.getString("payload_format"))),
                 ts(now), ts(now), limit);
     }
 

@@ -67,7 +67,7 @@ Feature IDs (`F-`, `A-`, `O-`) refer to [INCOMPLETE_FEATURES.md](INCOMPLETE_FEAT
 |---|---|---|---|
 | B-32 | Redis is declared in product-service but never used. There is no cache and no distributed lock anywhere (F-09). | OPEN | Remove the unused dependency, or add caching behind a tested interface. |
 | B-33 | Analytics aggregates across the whole table on each request (K7). | OPEN | Bounded queries and tenant scope (B-04). |
-| B-34 | Synchronous Kafka publishing on the request path (K5, B-16). | PARTIALLY FIXED | cart and loyalty use the outbox; inventory, order, stock and notification still publish synchronously. |
+| B-34 | Synchronous Kafka publishing on the request path (K5, B-16). | **FIXED** | order, inventory, stock, cart and loyalty write to the outbox; wire bytes unchanged (byte-equality tests for the RAW topics). notification's dead-letter replay is operator-triggered and stays direct. |
 
 ## Technical debt
 

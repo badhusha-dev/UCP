@@ -6,14 +6,31 @@ Shared module in `backend/outbox`. A service writes an event to its own `outbox_
 
 ## Adopted by
 
-| Service | Topics | Since |
-|---|---|---|
-| cart-service | `cart.events` (key: cart id) | 2026-11-01 |
-| loyalty-service | `loyalty.tier.upgraded`, `loyalty.points.earned`, `loyalty.points.redeemed` (no key) | 2026-11-01 |
+| Service | Topics | Format | Consumers |
+|---|---|---|---|
+| order-service | `order-events` (key: order id) | TEMPLATE (StringSerializer) | accounting, analytics, crm, notification |
+| inventory-service | `inventory.events` (key: product id) | RAW | product-service |
+| stock-service | `inventory.events` (key: product id) | RAW | product-service |
+| cart-service | `cart.events` (key: cart id) | TEMPLATE (JsonSerializer) | none found |
+| loyalty-service | `loyalty.tier.upgraded`, `loyalty.points.earned`, `loyalty.points.redeemed` (no key) | TEMPLATE (JsonSerializer) | crm-service |
 
-Still publishing directly: inventory, order, stock, notification. delivery-service has its own Postgres-only outbox (`DeliveryOutboxPublisher`), which can move onto this module later.
+All adopted on 2026-11-01. Event bytes on the wire did not change for any topic (see payload formats below).
 
-Event payloads did not change when these services moved to the outbox.
+Not adopted, by design:
+
+- **delivery-service** has its own Postgres-only outbox (`DeliveryOutboxPublisher`). It is reliable already and can move onto this module later.
+- **notification-service** `DeadLetterService` republishes stored dead letters when an operator asks. The event is already persisted, so an outbox adds nothing.
+
+## Payload formats
+
+Each row records how its payload is sent, so that moving a service to the outbox never changes what consumers receive.
+
+| `payload_format` | Written with | Sent with | Use when |
+|---|---|---|---|
+| `TEMPLATE` (default) | `OutboxWriter.append` | The service's own `KafkaTemplate`, so its configured value serializer applies | The service already sent a `String` payload |
+| `RAW` | `OutboxWriter.appendRaw` | A string-serializer template built from the service's `spring.kafka` settings | The service sent an object through `JsonSerializer`. Serialise it first with `JacksonUtils.enhancedObjectMapper()`, the mapper `JsonSerializer` uses |
+
+`InventoryProducerServiceTest` and `StockProducerServiceTest` assert that the RAW JSON is byte-for-byte what `JsonSerializer` produced. RAW sends carry no `__TypeId__` header; product-service, the only consumer of `inventory.events`, reads the raw bytes and ignores headers.
 
 ## Delivery semantics
 
@@ -36,7 +53,7 @@ Event payloads did not change when these services moved to the outbox.
    ```
 
 2. Add a Flyway migration with the DDL from `backend/outbox/src/main/resources/ucp-outbox/schema.sql` (see `cart-service` `V2__outbox_events.sql`).
-3. Inject `OutboxWriter` and call `append(topic, key, eventType, payload)` from a `@Transactional` method, in place of `KafkaTemplate.send`.
+3. Inject `OutboxWriter` and call it from a `@Transactional` method, in place of `KafkaTemplate.send`: `append(topic, key, eventType, payload)` if the service sent a `String`, or `appendRaw(...)` with `JacksonUtils.enhancedObjectMapper()` JSON if it sent an object through `JsonSerializer`.
 4. In the service's test `application.yml`, if tests build the schema from entities:
 
    ```yaml
@@ -70,5 +87,6 @@ Event payloads did not change when these services moved to the outbox.
 
 - Event envelope (catalog §5.3: `eventId`, `version`, `tenantId` and so on). Payloads are still each service's original format, so existing consumers are unaffected. `tenant_id` is in the table but not yet filled.
 - A metrics gauge for backlog size and age.
-- Adoption in order, inventory, stock and notification, and moving delivery-service onto the module.
+- Moving delivery-service onto the module.
+- An idempotency review of the consumers (accounting, analytics, crm, notification, product). Delivery is now at least once, where direct sends were at most once.
 - Verification against a live broker and Postgres. Tests use H2 and a mocked `KafkaTemplate`.

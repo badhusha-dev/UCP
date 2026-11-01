@@ -37,7 +37,6 @@ class OrderPricingCheckoutTest {
     @BeforeEach
     void setUp() {
         orderRepository.deleteAll();
-        when(producer.publishOrderEvent(any())).thenReturn(CompletableFuture.completedFuture(null));
         when(pricing.enabled()).thenReturn(true);
     }
 

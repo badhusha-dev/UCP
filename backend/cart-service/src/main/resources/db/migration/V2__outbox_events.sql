@@ -11,6 +11,9 @@ CREATE TABLE IF NOT EXISTS outbox_events (
     next_attempt_at TIMESTAMP WITH TIME ZONE NOT NULL,
     locked_until    TIMESTAMP WITH TIME ZONE,
     created_at      TIMESTAMP WITH TIME ZONE NOT NULL,
-    published_at    TIMESTAMP WITH TIME ZONE
+    published_at    TIMESTAMP WITH TIME ZONE,
+    -- TEMPLATE: send the payload with the service's KafkaTemplate (its own value serializer).
+    -- RAW: send the payload text as-is with a string serializer (for payloads already serialised as JSON).
+    payload_format  VARCHAR(16)  NOT NULL DEFAULT 'TEMPLATE' CHECK (payload_format IN ('TEMPLATE', 'RAW'))
 );
 CREATE INDEX IF NOT EXISTS idx_outbox_events_due ON outbox_events (status, next_attempt_at);

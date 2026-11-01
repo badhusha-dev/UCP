@@ -42,3 +42,9 @@ jwt:
   secret: inventory-test-signing-key-only-for-tests-2026
   issuer: universal-commerce
   audience: commerce-api
+
+ucp:
+  outbox:
+    initialize-schema: true   # H2 schema comes from entities; create outbox_events explicitly
+    publisher:
+      enabled: false          # no broker in tests

@@ -2,6 +2,7 @@ package com.ecommerce.outbox;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -14,23 +15,29 @@ import java.util.concurrent.TimeUnit;
  * Publishes committed outbox events to Kafka. A failed send is retried with exponential backoff (1 s doubling up to
  * 5 min). An event left IN_FLIGHT by a crashed instance is reclaimed once its lock expires, so delivery is at least
  * once: consumers must tolerate duplicates.
+ *
+ * <p>Ordinary events go through the service's KafkaTemplate. Raw events go through {@code rawKafka}, a string
+ * serializer template built from the same Kafka settings.
  */
-public class OutboxPublisher {
+public class OutboxPublisher implements DisposableBean {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxPublisher.class);
 
     private final OutboxRepository repository;
     private final KafkaTemplate<Object, Object> kafka;
+    private final KafkaTemplate<String, String> rawKafka;
     private final Clock clock;
     private final int batchSize;
     private final Duration sendTimeout;
     private final Duration lockDuration;
     private final Duration retention;
 
-    public OutboxPublisher(OutboxRepository repository, KafkaTemplate<Object, Object> kafka, Clock clock, int batchSize,
-                           Duration sendTimeout, Duration lockDuration, Duration retention) {
+    public OutboxPublisher(OutboxRepository repository, KafkaTemplate<Object, Object> kafka,
+                           KafkaTemplate<String, String> rawKafka, Clock clock, int batchSize, Duration sendTimeout,
+                           Duration lockDuration, Duration retention) {
         this.repository = repository;
         this.kafka = kafka;
+        this.rawKafka = rawKafka;
         this.clock = clock;
         this.batchSize = batchSize;
         this.sendTimeout = sendTimeout;
@@ -44,7 +51,7 @@ public class OutboxPublisher {
         for (OutboxEvent event : repository.findDue(now, batchSize)) {
             if (!repository.claim(event.eventId(), now, now.plus(lockDuration))) continue; // another instance has it
             try {
-                kafka.send(event.topic(), event.key(), event.payload()).get(sendTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                send(event).get(sendTimeout.toMillis(), TimeUnit.MILLISECONDS);
                 repository.markPublished(event.eventId(), clock.instant());
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
@@ -59,7 +66,18 @@ public class OutboxPublisher {
         repository.deletePublishedBefore(now.minus(retention));
     }
 
+    private java.util.concurrent.CompletableFuture<?> send(OutboxEvent event) {
+        if (!event.raw()) return kafka.send(event.topic(), event.key(), event.payload());
+        if (rawKafka == null) throw new IllegalStateException("No raw Kafka producer is configured for RAW outbox events");
+        return rawKafka.send(event.topic(), event.key(), event.payload());
+    }
+
     static Duration backoff(int attemptsSoFar) {
         return Duration.ofSeconds(Math.min(300, 1L << Math.min(attemptsSoFar, 9)));
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        if (rawKafka != null && rawKafka.getProducerFactory() instanceof DisposableBean factory) factory.destroy();
     }
 }

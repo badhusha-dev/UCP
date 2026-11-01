@@ -37,6 +37,7 @@ class OutboxPublisherTest {
     private OutboxRepository repository;
     private OutboxWriter writer;
     private KafkaTemplate<Object, Object> kafka;
+    private KafkaTemplate<String, String> rawKafka;
     private OutboxPublisher publisher;
 
     @BeforeEach
@@ -49,8 +50,48 @@ class OutboxPublisherTest {
         repository = new OutboxRepository(jdbc);
         writer = new OutboxWriter(repository, clock);
         kafka = mock(KafkaTemplate.class);
-        publisher = new OutboxPublisher(repository, kafka, clock, 50, Duration.ofSeconds(1), Duration.ofSeconds(60),
-                Duration.ofDays(7));
+        rawKafka = mock(KafkaTemplate.class);
+        publisher = new OutboxPublisher(repository, kafka, rawKafka, clock, 50, Duration.ofSeconds(1),
+                Duration.ofSeconds(60), Duration.ofDays(7));
+    }
+
+    @Test
+    @DisplayName("Raw events go through the string producer only, unchanged")
+    void rawEventsUseTheRawProducer() {
+        when(rawKafka.send(anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        UUID id = writer.appendRaw("inventory.events", "5", "STOCK_ADJUSTED", "{\"eventType\":\"STOCK_ADJUSTED\"}");
+
+        publisher.publishDue();
+
+        verify(rawKafka).send("inventory.events", "5", "{\"eventType\":\"STOCK_ADJUSTED\"}");
+        verify(kafka, never()).send(anyString(), any(), any());
+        assertThat(status(id)).isEqualTo("PUBLISHED");
+    }
+
+    @Test
+    @DisplayName("A raw event with no raw producer is retried, never sent through the service template")
+    void rawEventWithoutRawProducerIsRetried() {
+        OutboxPublisher withoutRaw = new OutboxPublisher(repository, kafka, null, clock, 50, Duration.ofSeconds(1),
+                Duration.ofSeconds(60), Duration.ofDays(7));
+        UUID id = writer.appendRaw("inventory.events", "5", "STOCK_ADJUSTED", "{}");
+
+        withoutRaw.publishDue();
+
+        verify(kafka, never()).send(anyString(), any(), any());
+        assertThat(status(id)).isEqualTo("NEW");
+        assertThat(jdbc.queryForObject("SELECT attempt_count FROM outbox_events", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("The raw template is built from spring.kafka settings with string serializers")
+    void rawTemplateUsesStringSerializers() throws Exception {
+        KafkaTemplate<String, String> template = OutboxAutoConfiguration.rawTemplate(
+                new org.springframework.boot.autoconfigure.kafka.KafkaProperties(), null);
+        java.util.Map<String, Object> config = template.getProducerFactory().getConfigurationProperties();
+        assertThat(config.get("value.serializer")).isEqualTo(org.apache.kafka.common.serialization.StringSerializer.class);
+        assertThat(config.get("key.serializer")).isEqualTo(org.apache.kafka.common.serialization.StringSerializer.class);
+        assertThat(OutboxAutoConfiguration.rawTemplate(null, null)).isNull();
+        ((org.springframework.beans.factory.DisposableBean) template.getProducerFactory()).destroy();
     }
 
     @AfterEach
