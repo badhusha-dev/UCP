@@ -26,6 +26,12 @@ spring:
       properties:
         max.block.ms: 500
 
+ucp:
+  outbox:
+    initialize-schema: true   # H2 schema comes from entities; create outbox_events explicitly
+    publisher:
+      enabled: false          # no broker in tests; events stay in the table where tests can read them
+
 eureka:
   client:
     enabled: false

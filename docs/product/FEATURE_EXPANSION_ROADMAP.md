@@ -26,7 +26,7 @@ Complexity uses the catalog scale: S (under 1 week), M (1–3 weeks), L (3–6 w
 | Credential rotation | S | Owner confirms live values | BLOCKED |
 | PLT-02 Asymmetric JWT | M | Key-management decision | BLOCKED |
 | PLT-03 Tenant isolation framework, nine slices | L | — (PLT-02 preferred) | Pending |
-| PLT-05 Shared transactional outbox | M | — | Pending |
+| PLT-05 Shared transactional outbox | M | — | **In progress**: module, cart and loyalty done; order, inventory, stock and notification next |
 | ACC-01 Posted-line immutability | S | Scratch Postgres | Pending |
 | PLT-04 Payment service | XL | PSP decision, PLT-05 | BLOCKED |
 
@@ -170,5 +170,5 @@ Complexity uses the catalog scale: S (under 1 week), M (1–3 weeks), L (3–6 w
 
 | Phase | Done | Remaining |
 |---|---|---|
-| 1 | PLT-01 lockout and throttling; credential removal from files | Credential rotation, PLT-02, PLT-03, PLT-05, ACC-01, PLT-04 |
+| 1 | PLT-01 lockout and throttling; credential removal from files; PLT-05 module with cart and loyalty | Credential rotation, PLT-02, PLT-03, PLT-05 (order, inventory, stock, notification), ACC-01, PLT-04 |
 | 2–7 | — | All |

@@ -7,9 +7,10 @@ import com.ecommerce.cart.model.CartItem;
 import com.ecommerce.cart.repository.AbandonedCartReminderRepository;
 import com.ecommerce.cart.repository.CartItemRepository;
 import com.ecommerce.cart.repository.CartRepository;
+import com.ecommerce.outbox.OutboxWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -29,7 +30,7 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final AbandonedCartReminderRepository reminderRepository;
-    private final Optional<KafkaTemplate<String, Object>> kafkaTemplate;
+    private final OutboxWriter outbox;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -384,22 +385,23 @@ public class CartService {
                 .build();
     }
 
+    /**
+     * Writes the event to the outbox in the caller's transaction (every caller is @Transactional), so it commits
+     * together with the cart change and is published to {@code cart.events} afterwards. The payload is unchanged.
+     */
     private void publishCartEvent(String eventType, Cart cart) {
-        kafkaTemplate.ifPresent(kt -> {
-            try {
-                Map<String, Object> event = new HashMap<>();
-                event.put("eventType", eventType);
-                event.put("cartId", cart.getId());
-                event.put("userId", cart.getUserId());
-                event.put("totalQuantity", cart.getTotalQuantity());
-                event.put("subtotal", cart.getSubtotal());
-                event.put("timestamp", OffsetDateTime.now().toString());
-                String jsonPayload = objectMapper.writeValueAsString(event);
-                kt.send("cart.events", String.valueOf(cart.getId()), jsonPayload);
-            } catch (Exception ex) {
-                log.warn("Failed to publish cart event {}: {}", eventType, ex.getMessage());
-            }
-        });
+        Map<String, Object> event = new HashMap<>();
+        event.put("eventType", eventType);
+        event.put("cartId", cart.getId());
+        event.put("userId", cart.getUserId());
+        event.put("totalQuantity", cart.getTotalQuantity());
+        event.put("subtotal", cart.getSubtotal());
+        event.put("timestamp", OffsetDateTime.now().toString());
+        try {
+            outbox.append("cart.events", String.valueOf(cart.getId()), eventType, objectMapper.writeValueAsString(event));
+        } catch (JsonProcessingException ex) {
+            log.warn("Could not serialise cart event {}: {}", eventType, ex.getMessage());
+        }
     }
 
     public CartDto mapToDto(Cart cart) {

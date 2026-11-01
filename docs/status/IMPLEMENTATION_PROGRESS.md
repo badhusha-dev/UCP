@@ -27,6 +27,7 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | Tenant-scope inventory analytics and require `analytics:read` (B-04) | product-service: 79 tests, 0 failures (2 new) |
 | Kubernetes secrets template (B-18) | Fresh-clone simulation: build fails without `02-secrets.yml`, passes with the template copied (34 Deployments) |
 | Gateway sign-in rate limit (B-20, PLT-01 second half) | api-gateway: 41 tests, 0 failures (3 new in `LoginRateLimitTest`) |
+| Shared transactional outbox, adopted by cart and loyalty (PLT-05 part, B-16, K5) | `outbox` 7, `cart-service` 8, `loyalty-service` 9 tests, all passing |
 
 ## In progress
 

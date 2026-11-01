@@ -6,8 +6,8 @@ import com.ecommerce.loyalty.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.ecommerce.outbox.OutboxWriter;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,8 +33,8 @@ public class LoyaltyService {
     @Autowired
     private LoyaltyTierRuleRepository tierRuleRepository;
 
-    @Autowired(required = false)
-    private KafkaTemplate<String, Object> kafkaTemplate;
+    @Autowired
+    private OutboxWriter outbox;
 
     // ─────────────────────────────────────────────
     // Profile
@@ -317,16 +317,15 @@ public class LoyaltyService {
         };
     }
 
+    /**
+     * Writes the event to the outbox in the caller's transaction; it is published to {@code topic} after commit.
+     * The payload format is unchanged because crm-service consumes these topics.
+     */
     private void publishEvent(String topic, Map<String, Object> payload) {
-        if (kafkaTemplate == null) return;
-        try {
-            StringBuilder sb = new StringBuilder("{");
-            payload.forEach((k, v) -> sb.append("\"").append(k).append("\":\"").append(v).append("\","));
-            if (sb.length() > 1) sb.setLength(sb.length() - 1);
-            sb.append("}");
-            kafkaTemplate.send(topic, sb.toString());
-        } catch (Exception e) {
-            log.warn("Failed to publish loyalty event to {}: {}", topic, e.getMessage());
-        }
+        StringBuilder sb = new StringBuilder("{");
+        payload.forEach((k, v) -> sb.append("\"").append(k).append("\":\"").append(v).append("\","));
+        if (sb.length() > 1) sb.setLength(sb.length() - 1);
+        sb.append("}");
+        outbox.append(topic, null, topic, sb.toString());
     }
 }

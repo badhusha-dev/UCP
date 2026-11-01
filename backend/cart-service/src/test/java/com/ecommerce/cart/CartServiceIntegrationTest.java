@@ -33,10 +33,37 @@ public class CartServiceIntegrationTest {
     @Autowired
     private jakarta.persistence.EntityManager entityManager;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void setUp() {
         reminderRepository.deleteAll();
         cartRepository.deleteAll();
+        jdbcTemplate.update("DELETE FROM outbox_events");
+    }
+
+    @Test
+    @DisplayName("Adding an item records a CART_UPDATED event in the outbox with the cart id as key")
+    void testAddItemWritesOutboxEvent() {
+        AddToCartRequest req = AddToCartRequest.builder()
+                .productId(301L)
+                .sku("SKU-301")
+                .productName("Travel Mug")
+                .unitPrice(new BigDecimal("12.50"))
+                .quantity(1)
+                .build();
+
+        CartDto cart = cartService.addItem(null, "guest_outbox_1", req);
+
+        List<java.util.Map<String, Object>> events = jdbcTemplate.queryForList(
+                "SELECT topic, message_key, event_type, payload, status FROM outbox_events");
+        assertThat(events).hasSize(1);
+        assertThat(events.get(0).get("topic")).isEqualTo("cart.events");
+        assertThat(events.get(0).get("message_key")).isEqualTo(String.valueOf(cart.getId()));
+        assertThat(events.get(0).get("event_type")).isEqualTo("CART_UPDATED");
+        assertThat(events.get(0).get("status")).isEqualTo("NEW");
+        assertThat(String.valueOf(events.get(0).get("payload"))).contains("\"eventType\":\"CART_UPDATED\"");
     }
 
     @Test

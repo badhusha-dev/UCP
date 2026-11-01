@@ -29,7 +29,7 @@ Feature IDs (`F-`, `A-`, `O-`) refer to [INCOMPLETE_FEATURES.md](INCOMPLETE_FEAT
 | B-13 | crm / loyalty | crm-service calls `http://loyalty-service:8086`, which is cart's port. Loyalty listens on 8087. Every crm→loyalty call would fail. | `backend/config-repo/crm-service-docker.yml` vs `loyalty-service.yml` | **FIXED** (on disk, nested repo, uncommitted) | Changed to 8087. The change must be committed in the nested `config-repo`. |
 | B-14 | Checkout | Promo codes ("UNIVERSAL20", "SPRING2026") are hard-coded in the UI and not validated by the pricing API. | K24 | OPEN | Add a pricing quote endpoint and validate codes server-side before checkout. |
 | B-15 | Frontends | `mfe-order` and `mfe-product` hard-code `http://localhost:8080`. They cannot run behind any other origin. | K12, S10 | OPEN | Read the API base from runtime config. |
-| B-16 | Events | cart and loyalty publish Kafka events on the request thread. A broker outage adds up to 5 s to each publishing request. | K5 | OPEN | Move to an outbox (F-10). |
+| B-16 | Events | cart and loyalty published Kafka events on the request thread. A broker outage added up to 5 s to each publishing request, and failed events were lost. | K5 | **FIXED** | Both write to the shared outbox inside the request's transaction. A scheduled publisher sends after commit, so an outage delays events instead of slowing requests or losing events. |
 | B-17 | Ops | Alertmanager Slack URLs are `REPLACE_ME` placeholders (commit `c57de2be`). Slack notifications do nothing until real URLs are injected. | Commit history; K-log | BLOCKED | Inject from a Secret at deploy time (F-16). |
 | B-18 | Ops | `kubernetes/kustomization.yml` references `base/02-secrets.yml`, which is gitignored. A fresh clone cannot build the manifests. | `.gitignore` lists the file; `kubectl kustomize` only passes locally | **FIXED** | `kubernetes/base/02-secrets.example.yml` lists every key the manifests read, and `docs/deployment/KUBERNETES_DEPLOYMENT.md` documents the copy step. Verified: a clone of HEAD fails without the file and builds (34 Deployments) once the template is copied. |
 
@@ -67,7 +67,7 @@ Feature IDs (`F-`, `A-`, `O-`) refer to [INCOMPLETE_FEATURES.md](INCOMPLETE_FEAT
 |---|---|---|---|
 | B-32 | Redis is declared in product-service but never used. There is no cache and no distributed lock anywhere (F-09). | OPEN | Remove the unused dependency, or add caching behind a tested interface. |
 | B-33 | Analytics aggregates across the whole table on each request (K7). | OPEN | Bounded queries and tenant scope (B-04). |
-| B-34 | Synchronous Kafka publishing on the request path (K5, B-16). | OPEN | Outbox. |
+| B-34 | Synchronous Kafka publishing on the request path (K5, B-16). | PARTIALLY FIXED | cart and loyalty use the outbox; inventory, order, stock and notification still publish synchronously. |
 
 ## Technical debt
 

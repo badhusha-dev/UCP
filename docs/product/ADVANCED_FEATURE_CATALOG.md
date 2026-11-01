@@ -98,7 +98,7 @@ Purpose: find capabilities merchants expect, not to copy any product. Entries de
 | PLT-02 | Platform | Asymmetric JWT with issuer and audience | EXTEND | P0 | M | user-service; all verifiers | Proposed |
 | PLT-03 | Platform | Tenant isolation framework | EXTEND | P0 | L | each owning service | Proposed |
 | PLT-04 | Platform | Payment service | NEW | P0 | XL | payment-service (new) | Proposed; PSP decision needed |
-| PLT-05 | Platform | Shared transactional outbox | EXTEND | P1 | M | shared module from delivery-service | Proposed |
+| PLT-05 | Platform | Shared transactional outbox | EXTEND | P1 | M | shared module `backend/outbox` | **Partly implemented**: module, cart, loyalty |
 | PLT-06 | Platform | Session lifecycle: refresh, revocation, reset, MFA | EXTEND | P1 | L | user-service; api-gateway | Proposed |
 | PLT-07 | Platform | Plans, entitlements and usage limits | EXTEND | P1 | M | user-service | Proposed |
 | PLT-08 | Platform | Notification center | EXTEND | P1 | L | notification-service | Proposed |
@@ -1221,5 +1221,6 @@ Implemented in this change (details in [docs/status/IMPLEMENTATION_PROGRESS.md](
 
 - **PLT-01, account lockout.** `user-service`: migration `V16__account_lockout.sql`, `LoginAttemptService`, `AuthController` (both login endpoints), three atomic `UserRepository` updates, OpenAPI responses 401 and 423, and five integration tests. User-service suite: 17 tests, 0 failures. The V16 migration was not run against Postgres; the tests build the schema from entities with Flyway off.
 - **PLT-01, gateway throttling.** `api-gateway` `LoginRateLimitFilter`: 20 sign-in requests per client address per minute across both login endpoints, then `429` with `Retry-After`. Three tests in `LoginRateLimitTest`; gateway suite 41 tests, 0 failures. Counters are per instance.
+- **PLT-05, shared outbox (partial).** New module `backend/outbox` (`ucp-outbox`): `OutboxWriter`, scheduled `OutboxPublisher` with exponential backoff, claim-based multi-instance safety, retention cleanup, portable SQL. Adopted by cart-service and loyalty-service with unchanged payloads (V2 migrations). Tests: module 7, cart 8, loyalty 9, all passing. Remaining: order, inventory, stock, notification; the event envelope.
 
 Not implemented: every other entry in this catalog. The reasons are in the roadmap: most P0 items wait on decisions (PSP, key management), and the rest follow in dependency order.
