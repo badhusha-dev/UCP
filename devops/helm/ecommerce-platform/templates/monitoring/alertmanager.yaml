@@ -44,7 +44,7 @@ data:
             send_resolved: true
       - name: 'pagerduty-critical'
         pagerduty_configs:
-          - routing_key: 'pd-ecommerce-production-routing-key'
+          - routing_key: 'REPLACE_ME_PAGERDUTY_ROUTING_KEY'
             severity: 'critical'
             send_resolved: true
             description: '{{ .CommonAnnotations.summary }}'

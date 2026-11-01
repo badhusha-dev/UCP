@@ -18,9 +18,11 @@ config:
   postgresPort: "5432"
 
 secrets:
+  # Placeholders only. Supply real values at install time, for example
+  # --set secrets.postgresPassword=... --set secrets.jwtSecret=<at least 32 random bytes, hex>.
   postgresUser: "ecommerce_admin"
-  postgresPassword: "admin_password"
-  jwtSecret: "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+  postgresPassword: "REPLACE_ME"
+  jwtSecret: "REPLACE_ME"
 
 infrastructure:
   postgres:

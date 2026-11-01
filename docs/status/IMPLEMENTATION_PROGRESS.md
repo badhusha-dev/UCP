@@ -23,6 +23,7 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | Account lockout (catalog PLT-01, status F-03) | user-service V16, `LoginAttemptService`, both login endpoints; user-service suite 17 pass, 0 fail |
 | Advanced feature catalog and expansion roadmap | `docs/product/ADVANCED_FEATURE_CATALOG.md`, `docs/product/FEATURE_EXPANSION_ROADMAP.md` |
 | Lockout user and operator guide | `docs/security/ACCOUNT_LOCKOUT.md` |
+| Remove committed credentials from tracked files (B-06 to B-09, B-35) | `git grep` finds none outside docs and tests; compose resolves with `.env` and refuses without; kustomize builds; error-stack 6/6 tests pass. Rotation of the old values is still the owner's task. |
 
 ## In progress
 
@@ -33,7 +34,7 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 
 | Item | Roadmap | Notes |
 |---|---|---|
-| Remove literal credentials from tracked files | 0.1 | Needs the owner to confirm and rotate values first (see Blocked). |
+| ~~Remove literal credentials from tracked files~~ | 0.1 | Done 2026-11-01. Rotation remains (see Blocked). |
 | Analytics exact role and tenant scope | 0.3 | Source change; test first. |
 | Tenant scoping, one slice per service (nine services) | 0.4 | Each slice is a new Flyway migration. |
 | Account lockout and gateway rate limiting | 0.5 | — |

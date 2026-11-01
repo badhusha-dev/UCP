@@ -5,7 +5,7 @@ services:
       - "127.0.0.1:15432:5432"
     environment:
       POSTGRES_USER: ecommerce_admin
-      POSTGRES_PASSWORD: admin_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./devops/init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql
@@ -148,7 +148,7 @@ services:
       - "127.0.0.1:3030:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=ecommerce123
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in .env}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_ANALYTICS_REPORTING_ENABLED=false
     volumes:
@@ -520,6 +520,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.error-stack
     environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
       - SERVICE_TO_SERVICE_TOKEN=${SERVICE_TO_SERVICE_TOKEN:?SERVICE_TO_SERVICE_TOKEN must be set in .env}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - CONFIG_SERVER_URL=http://config-server:8888
@@ -620,7 +621,7 @@ services:
       - DELIVERY_OTP_PEPPER=${DELIVERY_OTP_PEPPER:?DELIVERY_OTP_PEPPER must be set in .env}
       - JWT_SECRET=${JWT_SECRET}
       - POSTGRES_USER=${POSTGRES_USER:-ecommerce_admin}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-admin_password}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
       - DELIVERY_DB_URL=jdbc:postgresql://postgres:5432/delivery_db
       - IDENTITY_SERVICE_URL=http://user-service:8081
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
@@ -664,7 +665,7 @@ services:
       - STOCK_LEGACY_IMPORT_ENABLED=true
       - STOCK_LEGACY_JDBC_URL=jdbc:postgresql://postgres:5432/inventory_db
       - STOCK_LEGACY_DB_USERNAME=ecommerce_admin
-      - STOCK_LEGACY_DB_PASSWORD=admin_password
+      - STOCK_LEGACY_DB_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
       - ZIPKIN_BASE_URL=http://zipkin:9411
       - LOGSTASH_HOST=logstash
       - LOGSTASH_PORT=5000
@@ -796,8 +797,8 @@ services:
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/qa_db
       - SPRING_DATASOURCE_USERNAME=ecommerce_admin
-      - SPRING_DATASOURCE_PASSWORD=admin_password
-      - POSTGRES_PASSWORD=admin_password
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
       - QA_WORKSPACE_ROOT=/workspace
       - QA_RUNNER_DIRECTORY=/var/lib/qa/workspaces
       - QA_MAVEN_EXECUTABLE=/usr/share/maven/bin/mvn

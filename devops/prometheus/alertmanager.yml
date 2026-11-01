@@ -66,8 +66,8 @@ receivers:
     webhook_configs:
       - url: 'http://api-gateway:8080/actuator/health'
         send_resolved: true
-        http_config:
-          bearer_token: 'ops-internal-token-2026'
+        # The health endpoint needs no credentials. A webhook that does should use
+        # http_config.authorization.credentials_file with a mounted secret, not an inline token.
 
   - name: 'slack-critical-alerts'
     slack_configs:
@@ -94,7 +94,7 @@ receivers:
 
   - name: 'pagerduty-critical'
     pagerduty_configs:
-      - routing_key: 'pd-ecommerce-production-routing-key'
+      - routing_key: 'REPLACE_ME_PAGERDUTY_ROUTING_KEY'
         severity: 'critical'
         send_resolved: true
         description: '{{ .CommonAnnotations.summary }}'

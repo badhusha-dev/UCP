@@ -22,13 +22,16 @@ curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
      --data '{"type": "kv", "options": {"version": "2"}}' \
      "$VAULT_ADDR/v1/sys/mounts/secret" || echo "KV engine already mounted"
 
+: "${JWT_SECRET:?Set JWT_SECRET before seeding Vault}"
+: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before seeding Vault}"
+
 # 2. Seed Shared Platform Secrets (JWT secret, Logstash configuration)
 echo "Writing shared platform secrets..."
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
      --request POST \
      --data '{
        "data": {
-         "jwt.secret": "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970",
+         "jwt.secret": "'"${JWT_SECRET}"'",
          "jwt.expiration": "86400000",
          "logstash.host": "logstash",
          "logstash.port": "5000"
@@ -40,7 +43,7 @@ curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
      --request POST \
      --data '{
        "data": {
-         "jwt.secret": "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970",
+         "jwt.secret": "'"${JWT_SECRET}"'",
          "jwt.expiration": "86400000",
          "logstash.host": "logstash",
          "logstash.port": "5000"
@@ -56,7 +59,7 @@ for service in user-service product-service order-service notification-service; 
          --data '{
            "data": {
              "spring.datasource.username": "ecommerce_admin",
-             "spring.datasource.password": "admin_password"
+             "spring.datasource.password": "'"${POSTGRES_PASSWORD}"'"
            }
          }' \
          "$VAULT_ADDR/v1/secret/data/$service"

@@ -175,7 +175,7 @@ if (Test-Path $SloDashboardFile) {
 
 # Live Grafana API Verification
 try {
-    $cred = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("admin:ecommerce123"))
+    $cred = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("admin:$($env:GRAFANA_ADMIN_PASSWORD)"))
     $dashboards = Invoke-RestMethod -Uri "http://localhost:3030/api/search" -Headers @{Authorization = "Basic $cred"} -TimeoutSec 5 -ErrorAction Stop
     $sloDash = $dashboards | Where-Object { $_.uid -eq "ecommerce-slo-observability" }
     Assert-Condition "Grafana live API confirms 'ecommerce-slo-observability' registered" ($null -ne $sloDash)

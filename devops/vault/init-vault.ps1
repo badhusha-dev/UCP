@@ -23,10 +23,14 @@ try {
     Write-Host " [INFO] KV v2 secret engine already mounted at secret/" -ForegroundColor Gray
 }
 
+if (-not $env:JWT_SECRET -or -not $env:POSTGRES_PASSWORD) {
+    throw "Set JWT_SECRET and POSTGRES_PASSWORD in the environment before seeding Vault."
+}
+
 # 2. Seed Shared Platform Secrets
 $sharedSecrets = @{
     data = @{
-        "jwt.secret"     = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+        "jwt.secret"     = $env:JWT_SECRET
         "jwt.expiration" = "86400000"
         "logstash.host"  = "logstash"
         "logstash.port"  = "5000"
@@ -47,7 +51,7 @@ foreach ($svc in $services) {
     $svcSecret = @{
         data = @{
             "spring.datasource.username" = "ecommerce_admin"
-            "spring.datasource.password" = "admin_password"
+            "spring.datasource.password" = $env:POSTGRES_PASSWORD
         }
     } | ConvertTo-Json
 
