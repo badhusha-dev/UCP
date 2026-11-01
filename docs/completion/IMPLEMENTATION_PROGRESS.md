@@ -208,3 +208,37 @@ Not done / limits
   stock in the shared legacy stock-service, which is not tenant-aware).
 - Customer accounts are still platform-wide (no per-tenant customers); stock deduction still uses the legacy stock-service;
   `order-events` still carry no tenant, so notification/accounting consumers treat storefront orders as legacy.
+
+## Phase 0 — Baseline and checkpoint (2026-11-01, branch `feature/ucp-completion-modernization`)
+
+Tasks completed
+- Recorded git state. `main` at `faeea04a`, 15 commits ahead of `origin/main` (not pushed), untracked `info/` (a separate git repo, left unchanged).
+- Created checkpoint branch `backup/pre-modernization-faeea04a` at `faeea04a` and worked on `feature/ucp-completion-modernization` from it. Both are local.
+- Checked the tooling: Java 17.0.11, Node 24.5.0, Docker Engine 29.9.2 and Compose v5.6.1, with the daemon running. Earlier notes said no daemon was available; that is out of date.
+- Found a scratch Postgres (`ucp-test-pg`, PostgreSQL 15.18 on `127.0.0.1:55432`) and built service images. Read-only: nothing was written to it.
+- Inventoried backend modules, Flyway migrations, frontend workspaces, Compose services, Kubernetes resources, CI workflows and test annotations. Verified that `backend/legacy/` is not referenced by the POM, Compose or CI.
+- Wrote [docs/assessment/REPOSITORY_BASELINE.md](../assessment/REPOSITORY_BASELINE.md).
+
+Files changed
+- `docs/assessment/REPOSITORY_BASELINE.md` (new)
+- `docs/completion/IMPLEMENTATION_PROGRESS.md` (this entry)
+
+Tests executed in this phase
+- None new. Results from this session's earlier work are listed in REPOSITORY_BASELINE.md (product-service 83/83, shared-library 48/48, mfe-product 17/17, mfe-order 20/20, 16 typechecks).
+- The full backend suite was not rerun. The last full run (385 executed, 380 passed, 0 failed, 5 skipped) predates the outbox adoption, order tenant and storefront commits.
+
+Known issues found
+- The Postgres-gated accounting test needs a database named `ucp_scratch_*`. The databases in the scratch container do not match that pattern.
+- `backend/legacy/` (43 files) is unreferenced by the build.
+- Duplicate `AdminAnalyticsDashboard.tsx` in `mfe-analytics` and `mfe-order`.
+- Local Node (24.5) differs from the frontend image (node 20).
+- Several status documents still say "no Docker daemon".
+
+Not done in this phase
+- GitHub push: no approval given. Pushing the feature branch would also push the 15 unpushed `main` commits, so this needs an explicit decision.
+- The plan's documentation tree, cleanup report, security assessment, test results record and root README rewrite.
+
+Remaining phases: 1 to 9, none started.
+
+Next action
+- Phase 1 needs a decision on which environment to use. Option A: run the Postgres-gated tests against a new `ucp_scratch_phase1` database in the existing scratch container (creating a database there and no other change). Option B: skip that and begin the cleanup candidates listed in REPOSITORY_BASELINE.md.
