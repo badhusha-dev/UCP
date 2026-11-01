@@ -277,3 +277,11 @@ Scratch databases left in `ucp-test-pg`: the three above. They hold test data on
 
 Next action
 - Owner decides the B-38 policy. After that, the user-service test can be rerun to completion, and inventory's Postgres path can be run next.
+
+### Inventory Postgres path (2026-11-01)
+
+- Ran the inventory-service suite with `UCP_TEST_INVENTORY_POSTGRES_URL` pointing at a new scratch database, `ucp_scratch_phase1_inventory`, in `ucp-test-pg`. This supersedes the "inventory Postgres path" item under "Not done" above.
+- Result: 29 run, 0 failures, `BUILD SUCCESS`. The Postgres-backed classes are `InventoryServiceIntegrationTest` (9) and `OpsIntegrationTest` (11). The other classes use H2 and were unaffected. The outbox module's 10 tests ran first, because `-am` was needed (see below).
+- Flyway: inventory V1 to V5 applied on Postgres, all successful.
+- First attempt failed before any test ran: `-pl inventory-service` alone could not resolve `ucp-outbox`, which is a sibling module. `-am` fixes that.
+- Not done in this section: the user-service test (still blocked on B-38) and the Postgres path for stock, cart, loyalty and order.
