@@ -298,3 +298,11 @@ Next action
 - An earlier note in this log said that allowing module-scoped permissions would let `WAREHOUSE_OPERATOR` through. That was wrong: the role also holds procurement permissions (`goods-receipt:manage`, `purchase-order:view`), so a module-scoped rule still refuses it.
 - Checked against the scratch database: no seeded role passes the INVENTORY rule today. The rule requires `inventory:read` and only `inventory:` permissions. Roles that have `inventory:read` also have non-inventory permissions. V13 roles hold `inventory:view` instead. Details are in BUGS_AND_TECHNICAL_DEBT B-38.
 - The owner's decision is whether a warehouse operator's Inventory access includes goods receipt and purchase-order view. Yes: widen the rule to the V13 vocabulary. No: trim the role in a new migration.
+
+### Full backend run with Postgres enabled (2026-11-01)
+
+- `mvnw -B -ntp -fae test` from `backend/`, with the four Postgres URLs pointing at fresh databases (`ucp_scratch_full_accounting`, `_user`, `_delivery`, `_inventory`) in `ucp-test-pg`.
+- Result: 427 run, 426 passed, 1 failed, 0 errors, 0 skipped. Earlier full runs skipped 5 tests; none are skipped now.
+- Modules: 18 of 19 succeed. user-service fails on the single B-38 assertion in `TenantAccessPostgresIntegrationTest` (line 109). Its other tests passed.
+- The 427 count includes the outbox module's 10 tests and the Postgres-gated classes: accounting 5, delivery 6, inventory 29 across its two Postgres-enabled classes and the rest of that module.
+- Not a regression check of the H2 path alone: the same run also covers the H2 classes in every module.

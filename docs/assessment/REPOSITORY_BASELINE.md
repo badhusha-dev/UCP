@@ -76,6 +76,7 @@ Every workspace builds with `npm run build`, and all 16 typecheck with `tsc --no
 | TODO and FIXME markers in source (excluding docs, `info/`, build output) | 0 |
 | Postgres-gated tests | `AccountingTenantIsolationPostgresTest` runs only when `UCP_TEST_ACCOUNTING_POSTGRES_URL` matches `jdbc:postgresql://.+/ucp_scratch_*`. `TenantAccessPostgresIntegrationTest` (user-service) and `DeliveryTenantIsolationPostgresIntegrationTest` need `UCP_TEST_POSTGRES_URL` or a Docker host, and are skipped otherwise. `OpsIntegrationTest` and `InventoryServiceIntegrationTest` mention Postgres; their gating was not checked. The scratch container's databases (`ucp_user_test`, `ucp_inv_test`, `ucp_delivery_test`) do not match the accounting pattern, so a `ucp_scratch_*` database is needed for that test. |
 | Last full backend run (recorded in `IMPLEMENTATION_PROGRESS.md`) | `BUILD SUCCESS`, 385 executed, 380 passed, 0 failed, 5 skipped (the skipped tests are the Postgres-gated ones) |
+| Full backend run with Postgres enabled (2026-11-01, this pass) | 427 executed, 426 passed, 1 failed, 0 errors, 0 skipped. Failure: `TenantAccessPostgresIntegrationTest` (B-38). 18 of 19 modules succeed; user-service is the failing module. Logs in the scratchpad. |
 
 Results from this session, all after the commits they cover:
 
