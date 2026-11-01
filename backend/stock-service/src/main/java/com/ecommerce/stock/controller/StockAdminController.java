@@ -45,7 +45,11 @@ public class StockAdminController {
             @RequestHeader(value = "X-User-Email", required = false) String email,
             @Valid @RequestBody StockAdjustmentRequest request) {
         assertManagerOrAdmin(role);
-        return ResponseEntity.ok(inventoryService.adjustStock(request, email != null ? email : "STAFF"));
+        try {
+            return ResponseEntity.ok(inventoryService.adjustStock(request, email != null ? email : "STAFF"));
+        } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Concurrent stock update — please retry.");
+        }
     }
 
     @Operation(summary = "List Low-Stock Alerts", description = "Items where available stock is below or equal to reorder threshold (Manager/Admin only).")

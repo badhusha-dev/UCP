@@ -4,9 +4,16 @@ import com.ecommerce.order.admin.security.AdminPrincipal;
 import com.ecommerce.order.model.Order;
 import com.ecommerce.order.model.OrderItem;
 import com.ecommerce.order.repository.OrderRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
@@ -22,12 +29,21 @@ public class FulfillmentService {
     public record Line(Long orderItemId, Integer quantity) {}
     public record Request(String locationCode, String locationName, String method, List<Line> lines) {}
 
+    private static final Logger log = LoggerFactory.getLogger(FulfillmentService.class);
+
     private final OrderRepository orders;
     private final OrderAdminService admin;
     private final JdbcTemplate jdbc;
     private final AdminSupport support;
+    private final RestTemplate restTemplate;
 
-    public FulfillmentService(OrderRepository orders, OrderAdminService admin, JdbcTemplate jdbc, AdminSupport support) { this.orders = orders; this.admin = admin; this.jdbc = jdbc; this.support = support; }
+    @Value("${services.delivery.url:http://localhost:8091}")
+    private String deliveryServiceUrl;
+
+    @Value("${SERVICE_TO_SERVICE_TOKEN:}")
+    private String serviceToServiceToken;
+
+    public FulfillmentService(OrderRepository orders, OrderAdminService admin, JdbcTemplate jdbc, AdminSupport support, RestTemplate restTemplate) { this.orders = orders; this.admin = admin; this.jdbc = jdbc; this.support = support; this.restTemplate = restTemplate; }
 
     @Transactional(readOnly = true)
     public Map<String, Object> overview(AdminPrincipal actor, long orderId) {
@@ -108,7 +124,7 @@ public class FulfillmentService {
         require(actor, "order:process");
         Map<String, Object> f0 = fulfillment(actor, fulfillmentId);
         long orderId = ((Number) f0.get("orderId")).longValue();
-        return admin.idempotent(actor, key, "FULFILLMENT_SHIP", orderId, fulfillmentId + "|" + carrier + "|" + tracking, () -> {
+        Map<String, Object> result = admin.idempotent(actor, key, "FULFILLMENT_SHIP", orderId, fulfillmentId + "|" + carrier + "|" + tracking, () -> {
             Order o = admin.load(actor, orderId, true);
             Map<String, Object> f = fulfillment(actor, fulfillmentId);
             if (!Set.of("ALLOCATED", "PACKED").contains(f.get("status"))) throw conflict("This fulfillment is " + f.get("status") + " and cannot be shipped.");
@@ -136,6 +152,11 @@ public class FulfillmentService {
             } else orders.save(o);
             return Map.of("fulfillmentId", fulfillmentId, "orderStatus", o.getStatus(), "fulfillmentStatus", o.getFulfillmentStatus());
         });
+        String orderStatus = (String) result.get("orderStatus");
+        if (Set.of("SHIPPED", "FULFILLED").contains(orderStatus) && !"PICKUP".equals(f0.get("method"))) {
+            tryTriggerDelivery(orderId);
+        }
+        return result;
     }
 
     @Transactional
@@ -157,6 +178,30 @@ public class FulfillmentService {
         jdbc.update("INSERT INTO order_status_history(tenant_id, order_id, from_status, to_status, action, actor_id, actor_email, source, reason, correlation_id) VALUES (?,?,?,?,?,?,?,?,?,?)",
                 o.getTenantId(), o.getId(), o.getStatus(), o.getStatus(), "FULFILLMENT_CANCELLED", actor.userId(), actor.email(), "ADMIN", "fulfillment " + fulfillmentId, UUID.randomUUID().toString());
         return Map.of("fulfillmentId", fulfillmentId, "status", "CANCELLED", "fulfillmentStatus", o.getFulfillmentStatus());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void tryTriggerDelivery(long orderId) {
+        try {
+            Order o = orders.findById(orderId).orElse(null);
+            if (o == null) { log.warn("Delivery auto-create skipped: order {} not found", orderId); return; }
+            Map<String, Object> body = new HashMap<>();
+            body.put("orderId", orderId);
+            body.put("tenantId", o.getTenantId().toString());
+            body.put("businessType", o.getOrderType());
+            body.put("customerName", o.getCustomerName());
+            body.put("deliveryAddress", o.getDeliveryAddress());
+            body.put("totalAmount", o.getTotalAmount());
+            body.put("userId", o.getUserId());
+            body.put("itemCount", o.getItems().stream().mapToInt(OrderQueryService::quantity).sum());
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Service-Token", serviceToServiceToken);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            restTemplate.postForObject(deliveryServiceUrl + "/internal/delivery/auto-create", new HttpEntity<>(body, headers), Map.class);
+            log.info("Delivery auto-create triggered for order {}", orderId);
+        } catch (Exception e) {
+            log.warn("Delivery auto-create failed for order {} — {}", orderId, e.getMessage());
+        }
     }
 
     private Map<String, Object> fulfillment(AdminPrincipal actor, long id) {

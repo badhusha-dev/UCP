@@ -54,6 +54,11 @@ public class StockItem {
     @Builder.Default
     private OffsetDateTime updatedAt = OffsetDateTime.now();
 
+    @Version
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     @Transient
     public int getAvailableQuantity() {
         int avail = (stockQuantity != null ? stockQuantity : 0) - (reservedQuantity != null ? reservedQuantity : 0);
