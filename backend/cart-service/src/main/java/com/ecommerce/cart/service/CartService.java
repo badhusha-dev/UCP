@@ -118,7 +118,8 @@ public class CartService {
         cartRepository.save(targetUserCart);
     }
 
-    @Transactional(readOnly = true)
+    // Not read-only: a user or guest without a cart gets one created here, and PostgreSQL refuses that INSERT in a read-only transaction.
+    @Transactional
     public CartDto getCart(Long userId, String sessionToken) {
         Cart cart = getOrCreateCart(userId, sessionToken);
         return mapToDto(cart);
@@ -242,7 +243,8 @@ public class CartService {
         return mapToDto(saved);
     }
 
-    @Transactional(readOnly = true)
+    // Not read-only, for the same reason as getCart: it may create the cart.
+    @Transactional
     public CartValidationResultDto validateCart(Long userId, String sessionToken) {
         Cart cart = getOrCreateCart(userId, sessionToken);
 
