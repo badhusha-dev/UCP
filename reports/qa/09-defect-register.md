@@ -17,7 +17,7 @@ be fully assessed without owner input.
 |---|---|---|---|---|---|
 | B-40 | High | Frontend / cart-service | Cart not shared between micro-frontends — UI checkout cannot be completed in the deployed build. The cart MFE writes to local Redux store only; the shell and checkout MFE have no view of it. Recommended fix: expose `@ecommerce/shared-library` as a Module Federation singleton. | **FIXED** | `48b5486d` |
 | B-02 | High | Multiple services | Nine services are not tenant-scoped: stock, cart, loyalty, notification, qa, error-stack, legacy procurement, analytics, crm. Any authenticated user can read data from other tenants via these services. | **FIXED** | `2f2a90af` |
-| B-21 | Medium | user-service | Logout does not revoke JWT tokens. A logged-out user can reuse a captured token until it expires. | **OPEN** | — |
+| B-21 | Medium | user-service | Logout does not revoke JWT tokens. A logged-out user can reuse a captured token until it expires. | **FIXED** | `28f7ad25` |
 | B-05/K10 | Medium | user-service / config | JWT signing key stored in plaintext config. No Vault or Kubernetes Secret rotation. | **OPEN** | — |
 | B-29 | Medium | accounting-service | Posted accounting lines have no database immutability trigger. Lines can be mutated after posting. | **FIXED** | `23e54d4e` |
 | B-36 | Medium | crm-service | `StaffAccessFilter` refuses SUPER_ADMIN role, blocking super-admin access to CRM. | **FIXED** | `2f2a90af` |
@@ -74,6 +74,6 @@ be fully assessed without owner input.
 |---|---|---|---|---|
 | Critical | 0 | 0 | 0 | 0 |
 | High | 0 | 2 | 0 | 0 |
-| Medium | 2 | 6 | 0 | 1 |
+| Medium | 1 | 7 | 0 | 1 |
 | Low / Tech debt | 7 | 0 | 0 | 2 |
-| **Total** | **9** | **8** | **0** | **3** |
+| **Total** | **8** | **9** | **0** | **3** |
