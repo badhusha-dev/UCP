@@ -314,3 +314,12 @@ Next action
 - Tests: new `TenantAccessPostgresIntegrationTest.inventoryGrantAcceptsWarehouseOperatorAndRefusesRolesOutsideTheRuleInPostgres` (ADMIN, INVENTORY_MANAGER, INVENTORY_ANALYST and PROCUREMENT_MANAGER refused; WAREHOUSE_OPERATOR accepted). The existing tenant-access test now runs to its end. user-service: 19 run, 0 failed, against `ucp_scratch_b38_user`.
 - Still refused: INVENTORY_MANAGER and INVENTORY_ANALYST, which hold `supplier:view` (OPEN_ISSUES 1b, owner decision).
 - Not verified: procurement-service accepting `goods-receipt:manage` from an INVENTORY-scoped token. The app token now carries the permission; whether procurement honours it through the gateway was not tested.
+
+## Local deployment (2026-11-01)
+
+- Deployed a lean core of the platform to this machine with Docker Compose (project `ucp`, fresh volumes): infrastructure (Postgres, Redis, Zookeeper, Kafka), config and discovery servers, the API gateway, six backend services and six frontends. 19 containers, about 3.9 GiB of Docker's 7.62 GiB.
+- Verified: health, Eureka registration, Flyway from scratch on six databases (0 failed), Super Admin login (and a wrong-password 401), frontends over HTTP, catalog through the nginx proxy, a customer checkout that produced order 1 and a published `ORDER_CREATED` event on the `order-events` topic, and data surviving a Postgres restart.
+- Not verified: any browser flow, the stock effect of checkout (no reservation row appeared), notifications, payments, the nine undeployed services and nine other frontends.
+- Problems found: parallel frontend builds time out on `npm install`; the gateway's dependency list pulls in 10 services; eleven hard-coded `container_name` entries; Zipkin errors when observability is not started.
+- Details, commands and the stop/remove procedure: [DEPLOYMENT_REPORT.md](DEPLOYMENT_REPORT.md) and [../deployment/LOCAL_DEPLOYMENT.md](../deployment/LOCAL_DEPLOYMENT.md).
+- No code changed for the deployment. Secrets for it live in `scripts/dev-seed/deploy-local.env`, which is git-ignored; your `.env` was not modified.

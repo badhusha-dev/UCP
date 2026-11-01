@@ -27,7 +27,7 @@ Tracked files: 1,490 (about 12.4 MB). Ignore rules: 27 lines in `.gitignore`.
 | Docker | Engine 29.9.2, Compose v5.6.1, **daemon running** | Earlier documents say no daemon was available. That is no longer true. |
 | Scratch Postgres | Container `ucp-test-pg`, `postgres:15-alpine`, PostgreSQL 15.18, up about 3 hours, bound to `127.0.0.1:55432` | Contains databases `ucp_user_test`, `ucp_inv_test`, `ucp_delivery_test`. Not created by this work; not written to in this phase. |
 | Local images | At least 15 `ecommerce-platform-*:latest` images, including backend services and frontend apps | Built earlier. Their build date and source commit were not checked. |
-| Containers | One container exists, `ucp-test-pg`. No compose stack is running, so the live services and the live databases on `localhost:15432` described in [IMPLEMENTATION_PROGRESS.md](../completion/IMPLEMENTATION_PROGRESS.md) are not up now. | `docker info` reports 1 container, running. |
+| Containers | At the time of this baseline one container existed, `ucp-test-pg`; no compose stack was running. A lean local stack was deployed later the same day (see [DEPLOYMENT_REPORT.md](../completion/DEPLOYMENT_REPORT.md)). | `docker info` reported 1 container, running, at baseline time. |
 
 Earlier status documents record "no Docker daemon", which blocked the tenant slices, the Postgres-only migration checks and the container checks. That blocker is out of date. The status documents need updating once Phase 1 has run the tests against the scratch database.
 
