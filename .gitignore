@@ -16,6 +16,7 @@ node_modules/
 
 # Files that currently hold real-looking credentials; move to a secret manager / template before tracking
 kubernetes/base/02-secrets.yml
+kubernetes/security/jwt-rotation.yml
 *.tfvars
 *.tfstate
 *.tfstate.*

@@ -1,0 +1,52 @@
+# JWT Signing Key — Dedicated Kubernetes Secret with rotation support
+#
+# This file is an EXAMPLE / TEMPLATE.
+# Copy it to jwt-rotation.yml (gitignored), fill in the values, and apply:
+#
+#   kubectl apply -f kubernetes/security/jwt-rotation.yml -n ecommerce
+#
+# Generate a cryptographically secure key:
+#   openssl rand -hex 32
+#
+# KEY ROTATION (zero-downtime procedure)
+# ──────────────────────────────────────
+# 1. Generate a new key:           openssl rand -hex 32
+# 2. Update JWT_SECRET_NEXT in this file with the new value.
+# 3. Apply the updated secret:     kubectl apply -f kubernetes/security/jwt-rotation.yml
+# 4. Rolling restart to pick it up (if Stakater Reloader is NOT installed):
+#      kubectl rollout restart deployment/user-service deployment/api-gateway -n ecommerce
+# 5. Once all pods have restarted and tokens signed with the old key have expired
+#    (or after the configured jwt.expiration window), move JWT_SECRET_NEXT → JWT_SECRET
+#    and redeploy.
+#
+# AUTOMATIC ROLLING RESTART (Stakater Reloader)
+# ──────────────────────────────────────────────
+# If the Stakater Reloader is installed in the cluster (recommended for GitOps), the
+# annotation below causes user-service and api-gateway to roll automatically whenever
+# this Secret changes.  Install Reloader with:
+#   kubectl apply -f https://raw.githubusercontent.com/stakater/Reloader/master/deployments/kubernetes/reloader.yaml
+#
+# To wire the deployments, add these annotations to each Deployment's pod template:
+#   annotations:
+#     reloader.stakater.com/auto: "true"
+#
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jwt-signing-secret
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/part-of: ecommerce-platform
+    app.kubernetes.io/component: security
+  annotations:
+    # Stakater Reloader: auto-restart user-service and api-gateway on change.
+    reloader.stakater.com/match: "true"
+type: Opaque
+stringData:
+  # Current signing key — all new tokens are signed with this.
+  # Generate:  openssl rand -hex 32
+  JWT_SECRET: "REPLACE_ME"
+  # Previous key (optional) — kept during rotation window so unexpired tokens
+  # signed with the old key continue to validate.  Remove once all old tokens
+  # have expired (after jwt.expiration milliseconds).
+  # JWT_SECRET_PREVIOUS: "REPLACE_ME_PREVIOUS"
