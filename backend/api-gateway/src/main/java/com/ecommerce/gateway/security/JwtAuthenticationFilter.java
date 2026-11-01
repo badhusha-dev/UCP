@@ -29,13 +29,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     // Matched as exact paths or path prefixes (never substrings): "/api/x/swagger" must not skip authentication.
+    // Only /actuator/health and /actuator/info are open; all other actuator endpoints require authentication.
     private static final List<String> OPEN_API_ENDPOINTS = List.of(
             "/api/users/login",
             "/api/users/register",
             "/v3/api-docs",
             "/swagger-ui",
             "/webjars",
-            "/actuator",
+            "/actuator/health",
+            "/actuator/info",
             "/fallback"
     );
 
