@@ -183,4 +183,26 @@ class CatalogAdminTenantIsolationTest {
 
         mockMvc.perform(get("/api/products")).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
     }
+
+    @Test
+    @DisplayName("inventory analytics aggregates only the caller's tenant")
+    void inventoryAnalyticsIsTenantScoped() throws Exception {
+        createProduct(admin(TENANT_A), "A-1", "Tenant A product");
+        createProduct(admin(TENANT_B), "B-1", "Tenant B product one");
+        createProduct(admin(TENANT_B), "B-2", "Tenant B product two");
+
+        String analystA = token(TENANT_A, "ECOMMERCE_ADMIN", List.of("catalog:read", "analytics:read"));
+        mockMvc.perform(withToken(get("/api/products/admin/analytics/inventory"), analystA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalProducts").value(1))
+                .andExpect(jsonPath("$.lowStockItems[*].name").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.startsWith("Tenant A"))));
+    }
+
+    @Test
+    @DisplayName("inventory analytics requires analytics:read and ignores a forged role header")
+    void inventoryAnalyticsRequiresPermission() throws Exception {
+        mockMvc.perform(withToken(get("/api/products/admin/analytics/inventory"), admin(TENANT_A))
+                        .header("X-User-Role", "SUPER_ADMIN"))
+                .andExpect(status().isForbidden());
+    }
 }

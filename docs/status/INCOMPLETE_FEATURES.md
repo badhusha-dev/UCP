@@ -50,7 +50,7 @@ Known-issue IDs (`K#`) refer to [docs/completion/KNOWN_ISSUES.md](../completion/
 
 | ID | Application/Module | Feature | Current Status | What's Missing | Dependencies | Priority |
 |---|---|---|---|---|---|---|
-| O-01 | Analytics (`analytics-service`, `mfe-analytics`) | Tenant-scoped analytics | IMPLEMENTED BUT BROKEN | `InventoryAnalyticsController` aggregates all tenants and authorises with `role.contains("ADMIN")` (K7, S5). Gateway blocks tenant tokens only. | F-02 | P0 |
+| O-01 | Analytics (`analytics-service`, `mfe-analytics`) | Tenant-scoped analytics | PARTIALLY COMPLETED | Product inventory analytics (product-service) is now tenant-scoped and requires `analytics:read` (B-04). `analytics-service` itself is still not tenant-scoped (F-02), and the gateway keeps the inventory route closed to tenant tokens pending a role decision. | F-02 | P0 |
 | O-02 | Loyalty (`loyalty-service`, `mfe-loyalty`) | Loyalty points and admin | PARTIALLY COMPLETED | Not tenant-scoped (K2). crm-service called it on the wrong port (8086, now corrected to 8087 in config-repo). | F-02 | P2 |
 | O-03 | Cart (`cart-service`, `mfe-cart`) | Tenant-aware cart | PARTIALLY COMPLETED | Not tenant-scoped (K2). Publishes Kafka events from the request thread (K5). Its test was not hermetic (Kafka) before this session. | F-02, F-10 | P1 |
 | O-04 | Notification (`notification-service`) | Customer notifications from events | PARTIALLY COMPLETED | Not tenant-scoped (K2). Has DLQ handling. No delivery-status or retry UI. | F-02, F-11 | P2 |

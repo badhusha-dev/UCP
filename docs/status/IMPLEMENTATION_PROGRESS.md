@@ -24,6 +24,7 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | Advanced feature catalog and expansion roadmap | `docs/product/ADVANCED_FEATURE_CATALOG.md`, `docs/product/FEATURE_EXPANSION_ROADMAP.md` |
 | Lockout user and operator guide | `docs/security/ACCOUNT_LOCKOUT.md` |
 | Remove committed credentials from tracked files (B-06 to B-09, B-35) | `git grep` finds none outside docs and tests; compose resolves with `.env` and refuses without; kustomize builds; error-stack 6/6 tests pass. Rotation of the old values is still the owner's task. |
+| Tenant-scope inventory analytics and require `analytics:read` (B-04) | product-service: 79 tests, 0 failures (2 new) |
 
 ## In progress
 
