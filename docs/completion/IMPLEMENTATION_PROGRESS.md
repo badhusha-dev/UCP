@@ -242,3 +242,38 @@ Remaining phases: 1 to 9, none started.
 
 Next action
 - Phase 1 needs a decision on which environment to use. Option A: run the Postgres-gated tests against a new `ucp_scratch_phase1` database in the existing scratch container (creating a database there and no other change). Option B: skip that and begin the cleanup candidates listed in REPOSITORY_BASELINE.md.
+
+## Phase 1 — Postgres-gated tests (2026-11-01, partly done)
+
+Scope
+- Ran the three Postgres-gated test classes against real PostgreSQL 15 for the first time. Each module got its own scratch database in the existing `ucp-test-pg` container: `ucp_scratch_phase1_accounting`, `ucp_scratch_phase1_user`, `ucp_scratch_phase1_delivery`. One database per module keeps each Flyway history separate. The first plan used one database; this was changed for that reason.
+- The database password was read from the container's environment at run time and passed through environment variables. It was not written to any file. No other container or database was touched.
+
+Results
+- accounting-service `AccountingTenantIsolationPostgresTest`: 5 run, 0 failures, `BUILD SUCCESS`. Flyway `accounting_flyway_schema_history` reached V19.
+- delivery-service `DeliveryTenantIsolationPostgresIntegrationTest`: 6 run, 0 failures, `BUILD SUCCESS`. Flyway V1 and V2 applied.
+- user-service `TenantAccessPostgresIntegrationTest`: 1 run, 1 failure. Line 109 expected 204 and got 400. Cause: B-38 (the INVENTORY grant rule rejects `WAREHOUSE_OPERATOR`). The assertions after line 109 did not run, so that test is unverified.
+- Flyway on Postgres: user-service V1 to V16 applied, none failed.
+
+Defects found
+- B-38 (new, open): `WAREHOUSE_OPERATOR` cannot be granted the INVENTORY application. V13 added cross-module permissions to the role, and the rule in `TenantAccessService.grantApplication` requires INVENTORY roles to hold only `inventory:` permissions. Needs a policy decision. Not changed here.
+- K11 partly resolved: accounting V1 to V19, user V1 to V16 and delivery V1 to V2 apply cleanly on Postgres. Inventory V4 is still not run.
+
+Files changed
+- `docs/status/BUGS_AND_TECHNICAL_DEBT.md` (B-38 added)
+- `docs/completion/KNOWN_ISSUES.md` (K11 updated)
+- `docs/completion/IMPLEMENTATION_PROGRESS.md` (this entry)
+- No code changed.
+
+Run notes
+- The first attempt passed a comma-separated `-Dtest` list through `mvnw.cmd`; `cmd` split it and no tests ran. No database changed in that attempt. Each module now runs one class per invocation.
+
+Not done
+- The inventory Postgres path.
+- The rest of the user-service Postgres test, which depends on the B-38 decision.
+- A full backend rerun.
+
+Scratch databases left in `ucp-test-pg`: the three above. They hold test data only and can be dropped on request.
+
+Next action
+- Owner decides the B-38 policy. After that, the user-service test can be rerun to completion, and inventory's Postgres path can be run next.
