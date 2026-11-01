@@ -31,6 +31,7 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | Same-origin `/api` URLs in every frontend; dev proxies added to 11 MFEs (B-15, K12, S10) | 0 type errors; 16 builds, 4 lint and 76 node tests pass. Not exercised in a browser. |
 | Frontend typecheck clean in all 16 workspaces, plus a CI typecheck gate (TD-01 to TD-03) | 0 type errors; 16 builds, 4 lint and 76 node tests pass |
 | Tenant on order events and their outbox rows (B-27) | `order-service` 101 (2 producer tests), `notification-service` 11 (2 compatibility tests), all passing |
+| Product specification v1.0 recorded and measured against the repository | `docs/product/PRODUCT_REQUIREMENTS.md` (verbatim), `APPLICATION_CATALOG.md`, `RELEASE_STRATEGY.md`, `docs/architecture/SERVICE_BOUNDARIES.md`, `docs/README.md`. Evidence from migrations, entities and controller paths; documentation only. |
 | Analytics dashboards show load failures (B-37) | `mfe-analytics` and `mfe-order`: 0 type errors, both builds pass, mfe-order lint and 20 tests pass. Not exercised in a browser. |
 | Outbox adopted by order, inventory and stock; RAW payload mode (PLT-05, B-34) | `outbox` 10, `order-service` 100, `inventory-service` 29, `stock-service` 11 tests, all passing; cart 8 and loyalty 9 re-run |
 
