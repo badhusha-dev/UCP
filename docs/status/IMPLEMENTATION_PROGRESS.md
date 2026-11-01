@@ -61,6 +61,7 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | 2.4 Quality Center | Tenant-or-platform not decided | Decide. |
 | TD-07 config repository | Nested repo has no remote and 27 uncommitted entries | Give it a remote or move it into the parent. |
 | TD-08 frontend lockfile | Lockfile excluded from Docker context | Decide on a Linux-compatible lockfile. |
+| crm tenant slice (F-02) | Its SQL is Postgres-only and untested; Testcontainers needs Docker, and no Docker daemon is available | Start Docker on the build machine, or provide a scratch Postgres. |
 
 ## Next recommended task
 
