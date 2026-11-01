@@ -37,7 +37,7 @@ Feature IDs (`F-`, `A-`, `O-`) refer to [INCOMPLETE_FEATURES.md](INCOMPLETE_FEAT
 | ID | Area | Finding | Evidence | Status | Recommended fix |
 |---|---|---|---|---|---|
 | B-19 | Gateway | Actuator exposes `refresh`, `flyway` and `metrics` in non-prod (K8, S6). | `backend/config-repo/application.yml:10` | OPEN (config-repo has uncommitted changes, so not edited) | Restrict to `health,info,prometheus` in shared config. |
-| B-20 | Identity | No login lockout or rate limiting. Only error-stack-service has any rate-limit code. | Grep for lockout and rate-limit terms | OPEN | Failed-attempt counter with lockout, plus gateway rate limits (F-03). |
+| B-20 | Identity | No per-IP login rate limiting. Account lockout was added on 2026-11-01 (catalog PLT-01). | `AuthAndUserIntegrationTest` lockout tests | PARTIALLY FIXED | Gateway `RequestRateLimiter` backed by Redis (F-03). |
 | B-21 | Sessions | Logout does not revoke issued JWTs. | No denylist; no refresh tokens | OPEN | Denylist in Redis, or short-lived access tokens with refresh (F-08). |
 | B-22 | Identity | Service-token comparison is not constant-time in `accounting-service`. Duplicate of B-03. | — | **FIXED** (see B-03) | — |
 | B-23 | Ops | crm-service and procurement-service no longer publish host ports (K9). Their role-header trust remains (K9, S9). | `docker-compose.yml` | PARTIALLY FIXED | Add JWT verification to both services. |

@@ -73,7 +73,7 @@ Backend module results from the full run are in [TEST_AND_VERIFICATION_REPORT.md
 | Tenant-aware authorization | PARTIALLY COMPLETED | Gateway tenant allow-list (6 gateway boundary tests). Nine services not tenant-scoped (B-02). |
 | Session management and logout or revocation | PARTIALLY COMPLETED | Grant revocation only; logout does not revoke JWTs (B-21). |
 | Password reset | NOT IMPLEMENTED | No reset flow. |
-| Account lockout and throttling | NOT IMPLEMENTED | No lockout logic; rate limiting only in error-stack-service (B-20). |
+| Account lockout and throttling | PARTIALLY COMPLETED | Lockout after 5 failures for 15 minutes on both login endpoints (5 tests pass). No gateway throttling (B-20). |
 | MFA | NOT IMPLEMENTED | No TOTP code. |
 
 ### Multi-tenancy
@@ -123,7 +123,7 @@ See the application table and [INCOMPLETE_FEATURES.md](INCOMPLETE_FEATURES.md). 
 
 ## Missing functionality
 
-Payment service (F-01), refresh tokens (F-05), password reset (F-06), MFA (F-07), account lockout (F-03), Redis (F-09), Customer Support (A-10), vendor domain and portal (A-07), Super Admin plans and limits (A-01).
+Payment service (F-01), refresh tokens (F-05), password reset (F-06), MFA (F-07), gateway login throttling (F-03), Redis (F-09), Customer Support (A-10), vendor domain and portal (A-07), Super Admin plans and limits (A-01).
 
 ## Broken functionality (verified defects)
 
@@ -147,7 +147,7 @@ Container runtime; Kubernetes apply; the Postgres tenant-isolation test; Flyway 
 2. **Cross-tenant data exposure** (B-02, B-04): nine services and analytics return data across tenants to platform tokens.
 3. **Shared signing secret** (B-05): compromise of any one of seven services allows forging any token.
 4. **No payment service** (B-01): payment confirmation relies on a shared token.
-5. **No brute-force protection** (B-20): login is open to password guessing.
+5. **Limited brute-force protection** (B-20): accounts lock after five failures, but there is no per-IP throttling, so guesses can be spread across many accounts.
 6. **Untested frontends**: 12 of 16 workspaces have no tests, and typecheck fails in 7 (TD-01, TD-04).
 7. **Non-reproducible images** (TD-08) and a build gate that does not typecheck (TD-03).
 8. **Nested config repository** (TD-07): configuration changes are not versioned in the parent repository.

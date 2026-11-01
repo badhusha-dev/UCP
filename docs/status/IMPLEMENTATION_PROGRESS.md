@@ -20,6 +20,9 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | Add regression test for B-03 | `testInternalAccountingRefusesWrongServiceToken` passes |
 | Fix B-13: crm → loyalty port 8086 → 8087 | On disk in nested `backend/config-repo`; not committed |
 | Write the seven `docs/status/` documents | This folder |
+| Account lockout (catalog PLT-01, status F-03) | user-service V16, `LoginAttemptService`, both login endpoints; user-service suite 17 pass, 0 fail |
+| Advanced feature catalog and expansion roadmap | `docs/product/ADVANCED_FEATURE_CATALOG.md`, `docs/product/FEATURE_EXPANSION_ROADMAP.md` |
+| Lockout user and operator guide | `docs/security/ACCOUNT_LOCKOUT.md` |
 
 ## In progress
 
@@ -69,3 +72,4 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | 2026-11-01 | `docker compose config` (temporary token) | Valid, 46 services |
 | 2026-11-01 | `kubectl kustomize kubernetes` | Builds: 34 Deployments, 18 NetworkPolicies |
 | 2026-11-01 | Full backend run | `BUILD SUCCESS`; 19 of 19 modules; 385 executed, 380 passed, 0 failed, 5 skipped |
+| 2026-11-01 | `./mvnw -B -ntp -pl user-service test` after the lockout change | 17 executed, 0 failed (5 new lockout tests); V16 not run on Postgres |

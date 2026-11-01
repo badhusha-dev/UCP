@@ -81,6 +81,20 @@ Output includes a logged `Failed to decode JWT token` line from a test that feed
 
 Includes `testInternalAccountingRefusesWrongServiceToken`, added in this audit.
 
+### Targeted run after the account-lockout change
+
+`./mvnw -B -ntp -pl user-service test`
+
+| Class | Run | Failures | Errors | Skipped |
+|---|---|---|---|---|
+| AuthAndUserIntegrationTest | 10 (5 new lockout tests) | 0 | 0 | 0 |
+| LoyaltyAndAddressIntegrationTest | 5 | 0 | 0 | 0 |
+| TenantAccessPostgresIntegrationTest | 0 (Postgres-gated; no tests executed) | 0 | 0 | 0 |
+| UserRepositoryTest | 2 | 0 | 0 | 0 |
+| **Module total** | **17** | **0** | **0** | **0** |
+
+The new migration `V16__account_lockout.sql` was not executed. User-service tests use H2 with `ddl-auto: create-drop` and Flyway disabled.
+
 ### Full run
 
 `./mvnw -B -ntp -fae test` from `backend/`, log in the scratchpad (`backend-full-test.log`).
@@ -181,5 +195,6 @@ Not performed. No container was started. No browser session was run against a li
 | Frontend unit tests | 76 | 76 | 0 | 12 workspaces have no tests |
 | Backend targeted tests | 27 | 22 | 0 | 5 skipped (Postgres) |
 | Backend full run | 385 | 380 | 0 | 5 (Postgres-gated) |
+| Backend targeted (user-service, after lockout) | 17 | 17 | 0 | Postgres test class executes 0 tests |
 | Compose and Kubernetes validation | 4 | 4 | 0 | — |
 | Container, cluster and E2E tests | 0 | 0 | 0 | All not run (environment) |

@@ -2,6 +2,20 @@
 
 Baseline: `origin/main` at `c57de2be` before this session, and `881fe882` after the push on 2026-11-01. Earlier history (`ffee4dae`, `d76747e5`) was preserved; the secret scrub rewrote only the two unpushed commits (see TD-11 in [BUGS_AND_TECHNICAL_DEBT.md](BUGS_AND_TECHNICAL_DEBT.md)).
 
+## Latest change: account lockout and feature planning
+
+| File | Change | Verification |
+|---|---|---|
+| `backend/user-service/src/main/resources/db/migration/V16__account_lockout.sql` | New: `failed_login_attempts`, `locked_until` on `users` (additive) | Not run on Postgres (tests use H2 with Flyway off) |
+| `backend/user-service/.../model/User.java` | Two lockout fields, hidden from JSON | Suite passes |
+| `backend/user-service/.../repository/UserRepository.java` | Three single-statement lockout updates | Suite passes |
+| `backend/user-service/.../service/LoginAttemptService.java` | New: lock after N failures for a period; reset on success | Suite passes |
+| `backend/user-service/.../controller/AuthController.java` | Both login endpoints check the lock first, record failures and successes, and return 423 while locked; OpenAPI lists 401 and 423 | Suite passes |
+| `backend/user-service/src/test/.../AuthAndUserIntegrationTest.java` | Five lockout tests | 17 executed, 0 failed |
+| `docs/product/ADVANCED_FEATURE_CATALOG.md`, `docs/product/FEATURE_EXPANSION_ROADMAP.md`, `docs/security/ACCOUNT_LOCKOUT.md` | New documents | — |
+
+API behaviour change: a locked account receives `423 Locked` from `/api/users/login` and `/api/users/login/application`. Responses for unlocked accounts are unchanged.
+
 ## Commits on `main` since the baseline
 
 | Commit | Files | Summary | Verification |
