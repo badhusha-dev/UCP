@@ -1,0 +1,71 @@
+# Implementation Progress
+
+Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLETION_ROADMAP.md).
+
+**Last verification:** 2026-11-01 (frontend builds, typecheck, lint, node tests, accounting module tests). Full backend run: see the status line below.
+
+## Completed
+
+| Task | Evidence |
+|---|---|
+| Establish baseline from HEAD `881fe882` | `git status`, `git log`, module lists |
+| Inventory the ten applications and shared capabilities | Route and controller counts; source greps. Recorded in PROJECT_CURRENT_STATUS.md. |
+| Frontend builds for all 16 workspaces | `npm run build` exit 0 for each |
+| Frontend typecheck and lint | `tsc --noEmit` and `npm run lint` per workspace; recorded in TEST_AND_VERIFICATION_REPORT.md |
+| Frontend unit tests | shared-library 39, mfe-order 20, mfe-product 17, all pass |
+| Flyway duplicate and gap check | Static scan of 18 services |
+| Fix B-10: missing `Button` import in `mfe-user` | `tsc` TS2304 cleared |
+| Fix B-11: `noWrap` placed in `sx` in `mfe-product` | `tsc` TS2769 cleared |
+| Fix B-03: constant-time service-token comparison in accounting | Accounting module: 22 pass, 5 Postgres-gated skipped |
+| Add regression test for B-03 | `testInternalAccountingRefusesWrongServiceToken` passes |
+| Fix B-13: crm → loyalty port 8086 → 8087 | On disk in nested `backend/config-repo`; not committed |
+| Write the seven `docs/status/` documents | This folder |
+
+## In progress
+
+- **Full backend test run** (`./mvnw -B -ntp -fae test`, 19 reactor modules). Started on 2026-11-01; log in the scratchpad as `backend-full-test.log`. A monitor watches for completion. When it finishes: update the backend section of TEST_AND_VERIFICATION_REPORT.md and the backend rows of PROJECT_CURRENT_STATUS.md.
+- **Code fixes committed** (B-03, B-10, B-11) after targeted tests passed. The full run is a regression check, not a gate for these commits.
+
+## Pending
+
+| Item | Roadmap | Notes |
+|---|---|---|
+| Remove literal credentials from tracked files | 0.1 | Needs the owner to confirm and rotate values first (see Blocked). |
+| Analytics exact role and tenant scope | 0.3 | Source change; test first. |
+| Tenant scoping, one slice per service (nine services) | 0.4 | Each slice is a new Flyway migration. |
+| Account lockout and gateway rate limiting | 0.5 | — |
+| Accounting posted-line immutability trigger | 0.7 | Needs scratch Postgres. |
+| Outbox for all producers | 1.3 | — |
+| Frontend typecheck clean | 1.1 | 7 workspaces fail; mostly unused locals. |
+| Apply pending migrations on Postgres | 1.10 | Needs scratch Postgres. |
+| Container runtime verification | 1.11 | Needs Docker daemon. |
+
+## Blocked
+
+| Item | Blocker | Owner action required |
+|---|---|---|
+| 0.1 credential removal and rotation | Need to know whether committed values are live | Confirm the PagerDuty key is a placeholder; rotate the Alertmanager bearer token, Grafana password and database password. |
+| 0.6 asymmetric JWT | Key management approach not chosen | Decide on key storage (Vault or Kubernetes Secret). |
+| 0.8 payment service | PSP provider not chosen | Choose a PSP. |
+| 1.13 Kubernetes secrets | Gitignored `base/02-secrets.yml` referenced by kustomization | Decide on template-versus-generation approach. |
+| 2.1 customer support | Scope not defined | Define tickets, roles and channels. |
+| 2.4 Quality Center | Tenant-or-platform not decided | Decide. |
+| TD-07 config repository | Nested repo has no remote and 27 uncommitted entries | Give it a remote or move it into the parent. |
+| TD-08 frontend lockfile | Lockfile excluded from Docker context | Decide on a Linux-compatible lockfile. |
+
+## Next recommended task
+
+**0.1, the code side only:** remove the four literal credentials from tracked files (B-06 to B-09) and make compose and Kubernetes read them from required variables. The rotation itself needs the owner. This is the highest-risk open item that can be completed without a decision.
+
+## Verification log
+
+| Date | What was run | Result |
+|---|---|---|
+| 2026-11-01 | `npm run build` for 16 workspaces | 16 pass |
+| 2026-11-01 | `tsc --noEmit` for 16 workspaces | 9 pass, 7 fail (before and after fixes; see report) |
+| 2026-11-01 | `npm run lint` for 4 workspaces | 4 pass |
+| 2026-11-01 | `npm test` shared-library, mfe-order, mfe-product | 39, 20, 17 pass |
+| 2026-11-01 | `./mvnw -B -ntp -pl accounting-service test` | 27 run, 0 fail, 5 skipped |
+| 2026-11-01 | `docker compose config` (temporary token) | Valid, 46 services |
+| 2026-11-01 | `kubectl kustomize kubernetes` | Builds: 34 Deployments, 18 NetworkPolicies |
+| 2026-11-01 | Full backend run | Pending |
