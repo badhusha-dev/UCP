@@ -28,6 +28,6 @@ tenant-scoped; it does not make those services multi-tenant.
 ## Remaining gaps (ordered)
 1. Checkout / storefront have no tenant resolution (domain → tenant); every customer order lands in one tenant.
 2. Accounting admin is tenant-scoped since V19 (deployed); order-event postings and customer endpoints still land in the legacy tenant because events carry no tenant.
-3. The notification consumer's `OrderEvent` DTO has no tenant field, so `order-events` consumers cannot scope by tenant.
+3. ~~The notification consumer's `OrderEvent` DTO has no tenant field, so `order-events` consumers cannot scope by tenant.~~ Resolved 2026-11-01: `order-events` carry `tenantId` and notification's DTO has the field. Consumers do not scope by it yet.
 4. RBAC roles are global; a tenant cannot define its own roles.
 5. Store-level scope relies on a `store_ids` claim that user-service does not issue (fail closed today).

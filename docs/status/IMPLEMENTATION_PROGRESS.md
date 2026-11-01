@@ -28,6 +28,7 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | Kubernetes secrets template (B-18) | Fresh-clone simulation: build fails without `02-secrets.yml`, passes with the template copied (34 Deployments) |
 | Gateway sign-in rate limit (B-20, PLT-01 second half) | api-gateway: 41 tests, 0 failures (3 new in `LoginRateLimitTest`) |
 | Shared transactional outbox, adopted by cart and loyalty (PLT-05 part, B-16, K5) | `outbox` 7, `cart-service` 8, `loyalty-service` 9 tests, all passing |
+| Tenant on order events and their outbox rows (B-27) | `order-service` 101 (2 producer tests), `notification-service` 11 (2 compatibility tests), all passing |
 | Outbox adopted by order, inventory and stock; RAW payload mode (PLT-05, B-34) | `outbox` 10, `order-service` 100, `inventory-service` 29, `stock-service` 11 tests, all passing; cart 8 and loyalty 9 re-run |
 
 ## In progress

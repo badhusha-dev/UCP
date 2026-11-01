@@ -85,7 +85,7 @@ Each row records how its payload is sent, so that moving a service to the outbox
 
 ## Not yet done
 
-- Event envelope (catalog §5.3: `eventId`, `version`, `tenantId` and so on). Payloads are still each service's original format, so existing consumers are unaffected. `tenant_id` is in the table but not yet filled.
+- Event envelope (catalog §5.3: `eventId`, `version`, `tenantId` and so on). Payloads are still each service's original format, so existing consumers are unaffected. `tenant_id` is filled for `order-events` (and the payload carries `tenantId`); the other topics leave it empty.
 - A metrics gauge for backlog size and age.
 - Moving delivery-service onto the module.
 - An idempotency review of the consumers (accounting, analytics, crm, notification, product). Delivery is now at least once, where direct sends were at most once.

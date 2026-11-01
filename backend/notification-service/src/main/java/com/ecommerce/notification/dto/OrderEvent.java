@@ -12,4 +12,6 @@ public class OrderEvent {
     private BigDecimal totalAmount;
     private String reason;
     private String referenceId;
+    /** The order's tenant, added to order-events on 2026-11-01. Null for events published before that. */
+    private String tenantId;
 }

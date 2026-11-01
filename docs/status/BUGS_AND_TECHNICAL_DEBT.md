@@ -51,7 +51,7 @@ Feature IDs (`F-`, `A-`, `O-`) refer to [INCOMPLETE_FEATURES.md](INCOMPLETE_FEAT
 |---|---|---|---|---|
 | B-25 | Checkout | `storefront` slug is accepted by checkout, but no UI sends it, so all orders land in the legacy tenant (K4). | OPEN | Storefront resolution (Phase 6). |
 | B-26 | Accounting | Tenant login screen missing in `mfe-accounting`, and no tenant holds an Accounting grant (K17). | OPEN | Add the login route and grant through Super Admin. |
-| B-27 | Events | `order-events` carry no tenant (K4). | OPEN | Add `tenantId` to the event contract. |
+| B-27 | Events | `order-events` carried no tenant (K4). | **FIXED** | Every order event has `tenantId`, taken from the order when the caller does not set it, and the outbox row records it. No consumer change was needed (three read a JSON tree; notification's DTO gained the field). Consumers do not yet scope data by it. |
 
 ## Database
 
