@@ -31,7 +31,7 @@ Feature IDs (`F-`, `A-`, `O-`) refer to [INCOMPLETE_FEATURES.md](INCOMPLETE_FEAT
 | B-15 | Frontends | `mfe-order` and `mfe-product` hard-code `http://localhost:8080`. They cannot run behind any other origin. | K12, S10 | OPEN | Read the API base from runtime config. |
 | B-16 | Events | cart and loyalty publish Kafka events on the request thread. A broker outage adds up to 5 s to each publishing request. | K5 | OPEN | Move to an outbox (F-10). |
 | B-17 | Ops | Alertmanager Slack URLs are `REPLACE_ME` placeholders (commit `c57de2be`). Slack notifications do nothing until real URLs are injected. | Commit history; K-log | BLOCKED | Inject from a Secret at deploy time (F-16). |
-| B-18 | Ops | `kubernetes/kustomization.yml` references `base/02-secrets.yml`, which is gitignored. A fresh clone cannot build the manifests. | `.gitignore` lists the file; `kubectl kustomize` only passes locally | OPEN | Commit a template with placeholders, or document generation from `.env`. |
+| B-18 | Ops | `kubernetes/kustomization.yml` references `base/02-secrets.yml`, which is gitignored. A fresh clone cannot build the manifests. | `.gitignore` lists the file; `kubectl kustomize` only passes locally | **FIXED** | `kubernetes/base/02-secrets.example.yml` lists every key the manifests read, and `docs/deployment/KUBERNETES_DEPLOYMENT.md` documents the copy step. Verified: a clone of HEAD fails without the file and builds (34 Deployments) once the template is copied. |
 
 ## Security (other)
 
