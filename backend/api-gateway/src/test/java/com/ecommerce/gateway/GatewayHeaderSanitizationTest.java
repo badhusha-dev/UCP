@@ -2,6 +2,7 @@ package com.ecommerce.gateway;
 
 import com.ecommerce.gateway.security.JwtAuthenticationFilter;
 import com.ecommerce.gateway.security.JwtUtil;
+import com.ecommerce.gateway.security.TokenRevocationCheck;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -28,7 +29,8 @@ class GatewayHeaderSanitizationTest {
     private static final String TOKEN_TENANT = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
     private static final String SPOOFED_TENANT = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 
-    private final JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtUtil());
+    private static final TokenRevocationCheck NO_OP_REVOCATION = jti -> Mono.just(false);
+    private final JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtUtil(), NO_OP_REVOCATION);
 
     @Test
     @DisplayName("Authenticated: client X-Tenant-ID / X-User-* / X-Service-Token are replaced by verified claims")

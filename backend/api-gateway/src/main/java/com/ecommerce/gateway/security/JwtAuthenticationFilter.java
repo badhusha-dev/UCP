@@ -17,15 +17,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.function.Predicate;
 
 @Component
 public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private final JwtUtil jwtUtil;
+    private final TokenRevocationCheck revocationClient;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, TokenRevocationCheck revocationClient) {
         this.jwtUtil = jwtUtil;
+        this.revocationClient = revocationClient;
     }
 
     // Matched as exact paths or path prefixes (never substrings): "/api/x/swagger" must not skip authentication.
@@ -47,7 +48,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
-        
+
         boolean isAdminPath = request.getURI().getPath().contains("/admin");
         String path = request.getURI().getPath();
         if (path.startsWith("/api/users/internal/")) {
@@ -89,125 +90,134 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             }
         }
 
-        String authHeader = request.getHeaders().getOrEmpty(HttpHeaders.AUTHORIZATION).get(0);
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            authHeader = authHeader.substring(7);
-        }
-        
-        if (!jwtUtil.validateToken(authHeader)) {
+        String rawAuthHeader = request.getHeaders().getOrEmpty(HttpHeaders.AUTHORIZATION).get(0);
+        final String token = (rawAuthHeader != null && rawAuthHeader.startsWith("Bearer "))
+                ? rawAuthHeader.substring(7) : rawAuthHeader;
+
+        if (!jwtUtil.validateToken(token)) {
             return onError(exchange, "Invalid authorization token", HttpStatus.UNAUTHORIZED);
         }
 
+        final Claims claims;
         try {
-            Claims claims = jwtUtil.getClaims(authHeader);
-            Object userId = claims.get("id");
-            Object userRole = claims.get("role");
-            String userEmail = claims.getSubject();
-
-            String roleStr = userRole != null ? String.valueOf(userRole) : "";
-            boolean isSuperAdmin = isPlatformSuperAdmin(claims, roleStr);
-            boolean hasPermissionClaim = claims.containsKey("permissions");
-            if (claims.get("application_code") != null && !TenantRoutePolicy.allows(path, userId)) {
-                return onError(exchange, "This route does not accept tenant-scoped application tokens", HttpStatus.FORBIDDEN);
-            }
-            if (path.startsWith("/api/delivery") && !jwtUtil.validateApplicationToken(authHeader, "DELIVERY_OPS")) {
-                return onError(exchange, "A tenant-scoped Delivery application token is required", HttpStatus.FORBIDDEN);
-            }
-            if (path.startsWith("/api/delivery")) {
-                List<String> requiredPermissions = deliveryRoutePermissions(path, request.getMethod());
-                if (requiredPermissions.isEmpty() || requiredPermissions.stream().noneMatch(permission -> hasPermission(claims, roleStr, permission))) {
-                    return onError(exchange, "Delivery application permission is required", HttpStatus.FORBIDDEN);
-                }
-            }
-            if (path.startsWith("/api/inventory/") && !jwtUtil.validateApplicationToken(authHeader, "INVENTORY")) {
-                return onError(exchange, "An authorized tenant Inventory token is required", HttpStatus.FORBIDDEN);
-            }
-            if (path.startsWith("/api/platform/") && !jwtUtil.validatePlatformToken(authHeader)) {
-                return onError(exchange, "A valid platform token is required", HttpStatus.UNAUTHORIZED);
-            }
-            if (path.startsWith("/api/crm") && !hasPermission(claims, roleStr,
-                    HttpMethod.GET.equals(request.getMethod()) ? "crm:read" : "crm:manage") && !legacyStaff(roleStr, hasPermissionClaim)) {
-                return onError(exchange, "CRM access requires an assigned CRM permission", HttpStatus.FORBIDDEN);
-            }
-            boolean ucpProcurement = path.startsWith("/api/procurement/ucp/");
-            if (ucpProcurement && !jwtUtil.validateApplicationToken(authHeader, "INVENTORY")) {
-                return onError(exchange, "An authorized tenant Inventory token is required", HttpStatus.FORBIDDEN);
-            }
-            if (path.startsWith("/api/procurement/") && !ucpProcurement && !hasPermission(claims, roleStr,
-                    HttpMethod.GET.equals(request.getMethod()) ? "procurement:read" : "procurement:manage") && !legacyStaff(roleStr, hasPermissionClaim)) {
-                return onError(exchange, "Procurement access requires an assigned procurement permission", HttpStatus.FORBIDDEN);
-            }
-            if (path.startsWith("/api/inventory/") && !path.startsWith("/api/inventory/ops/") && !hasPermission(claims, roleStr,
-                    HttpMethod.GET.equals(request.getMethod()) ? "inventory:read" : "inventory:manage")) {
-                return onError(exchange, "Inventory access requires an assigned tenant permission", HttpStatus.FORBIDDEN);
-            }
-
-            boolean isUserDirectoryRead = "/api/users".equals(path) && HttpMethod.GET.equals(request.getMethod());
-            boolean isUserRoleOrStatusChange = path.matches("^/api/users/\\d+/(role|status)$");
-            if (path.startsWith("/api/access") && !hasPermission(claims, roleStr, "roles:manage") && !legacyAdmin(roleStr, hasPermissionClaim)) {
-                return onError(exchange, "Role-management permission required", HttpStatus.FORBIDDEN);
-            }
-            if (isUserDirectoryRead && !hasPermission(claims, roleStr, "users:read") && !legacyAdmin(roleStr, hasPermissionClaim)) {
-                return onError(exchange, "User-directory permission required", HttpStatus.FORBIDDEN);
-            }
-            if (isUserRoleOrStatusChange && !hasPermission(claims, roleStr, "users:manage") && !legacyAdmin(roleStr, hasPermissionClaim)) {
-                return onError(exchange, "User-management permission required", HttpStatus.FORBIDDEN);
-            }
-
-            Matcher userAccountPath = Pattern.compile("^/api/users/(\\d+)(?:/(.*))?$").matcher(path);
-            if (userAccountPath.matches()) {
-                String targetUserId = userAccountPath.group(1);
-                String accountAction = userAccountPath.group(2);
-                if (accountAction != null && accountAction.startsWith("loyalty/earn")
-                        && !hasPermission(claims, roleStr, "loyalty:manage") && !legacyStaff(roleStr, hasPermissionClaim)) {
-                    return onError(exchange, "Staff role required to award loyalty points", HttpStatus.FORBIDDEN);
-                }
-                boolean selfAccount = userId != null && targetUserId.equals(String.valueOf(userId));
-                boolean manageAccount = accountAction != null && accountAction.matches("(role|status)")
-                        && hasPermission(claims, roleStr, "users:manage");
-                if (!selfAccount && !manageAccount && !hasPermission(claims, roleStr, "users:read")) {
-                    return onError(exchange, "Users may only access their own account without users:read permission", HttpStatus.FORBIDDEN);
-                }
-            }
-
-            // RBAC Check for Admin paths
-            if (path.contains("/admin") || path.contains("/dlq") || path.startsWith("/api/platform/")) {
-                String requiredPermission = routePermission(path, request.getMethod());
-                if (requiredPermission == null) requiredPermission = "application:admin";
-                if (path.startsWith("/api/platform/") && !isSuperAdmin) {
-                    return onError(exchange, "Platform Super Admin access is required", HttpStatus.FORBIDDEN);
-                }
-                if (!hasPermission(claims, roleStr, requiredPermission)
-                        && !legacyStaff(roleStr, hasPermissionClaim)) {
-                    return onError(exchange, "Access denied: permission " + requiredPermission + " is required", HttpStatus.FORBIDDEN);
-                }
-            }
-
-            // Strip client-supplied user headers and inject verified claims
-            ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                    .headers(h -> {
-                        h.remove("X-User-Id");
-                        h.remove("X-User-Email");
-                        h.remove("X-User-Role");
-                        h.remove("X-User-Roles");
-                        h.remove("X-User-Permissions");
-                        h.remove("X-Tenant-ID");
-                        h.remove("X-Application-Code");
-                        h.remove("X-Service-Token");
-                    })
-                    .header("X-User-Id", userId != null ? String.valueOf(userId) : "")
-                    .header("X-User-Email", userEmail != null ? userEmail : "")
-                    .header("X-User-Role", isSuperAdmin ? "ADMIN" : roleStr)
-                    .header("X-User-Roles", roleStr)
-                    .header("X-User-Permissions", permissionHeader(claims))
-                    .header("X-Tenant-ID", claims.get("tenant_id", String.class) != null ? claims.get("tenant_id", String.class) : "")
-                    .header("X-Application-Code", claims.get("application_code", String.class) != null ? claims.get("application_code", String.class) : "")
-                    .build();
-
-            return chain.filter(exchange.mutate().request(mutatedRequest).build());
+            claims = jwtUtil.getClaims(token);
         } catch (Exception e) {
             return onError(exchange, "Failed to parse security claims: " + e.getMessage(), HttpStatus.UNAUTHORIZED);
         }
+
+        return revocationClient.isRevoked(claims.getId())
+                .flatMap(revoked -> {
+                    if (revoked) return onError(exchange, "Token has been revoked", HttpStatus.UNAUTHORIZED);
+                    try {
+                        Object userId = claims.get("id");
+                        Object userRole = claims.get("role");
+                        String userEmail = claims.getSubject();
+
+                        String roleStr = userRole != null ? String.valueOf(userRole) : "";
+                        boolean isSuperAdmin = isPlatformSuperAdmin(claims, roleStr);
+                        boolean hasPermissionClaim = claims.containsKey("permissions");
+                        if (claims.get("application_code") != null && !TenantRoutePolicy.allows(path, userId)) {
+                            return onError(exchange, "This route does not accept tenant-scoped application tokens", HttpStatus.FORBIDDEN);
+                        }
+                        if (path.startsWith("/api/delivery") && !jwtUtil.validateApplicationToken(token, "DELIVERY_OPS")) {
+                            return onError(exchange, "A tenant-scoped Delivery application token is required", HttpStatus.FORBIDDEN);
+                        }
+                        if (path.startsWith("/api/delivery")) {
+                            List<String> requiredPermissions = deliveryRoutePermissions(path, request.getMethod());
+                            if (requiredPermissions.isEmpty() || requiredPermissions.stream().noneMatch(permission -> hasPermission(claims, roleStr, permission))) {
+                                return onError(exchange, "Delivery application permission is required", HttpStatus.FORBIDDEN);
+                            }
+                        }
+                        if (path.startsWith("/api/inventory/") && !jwtUtil.validateApplicationToken(token, "INVENTORY")) {
+                            return onError(exchange, "An authorized tenant Inventory token is required", HttpStatus.FORBIDDEN);
+                        }
+                        if (path.startsWith("/api/platform/") && !jwtUtil.validatePlatformToken(token)) {
+                            return onError(exchange, "A valid platform token is required", HttpStatus.UNAUTHORIZED);
+                        }
+                        if (path.startsWith("/api/crm") && !hasPermission(claims, roleStr,
+                                HttpMethod.GET.equals(request.getMethod()) ? "crm:read" : "crm:manage") && !legacyStaff(roleStr, hasPermissionClaim)) {
+                            return onError(exchange, "CRM access requires an assigned CRM permission", HttpStatus.FORBIDDEN);
+                        }
+                        boolean ucpProcurement = path.startsWith("/api/procurement/ucp/");
+                        if (ucpProcurement && !jwtUtil.validateApplicationToken(token, "INVENTORY")) {
+                            return onError(exchange, "An authorized tenant Inventory token is required", HttpStatus.FORBIDDEN);
+                        }
+                        if (path.startsWith("/api/procurement/") && !ucpProcurement && !hasPermission(claims, roleStr,
+                                HttpMethod.GET.equals(request.getMethod()) ? "procurement:read" : "procurement:manage") && !legacyStaff(roleStr, hasPermissionClaim)) {
+                            return onError(exchange, "Procurement access requires an assigned procurement permission", HttpStatus.FORBIDDEN);
+                        }
+                        if (path.startsWith("/api/inventory/") && !path.startsWith("/api/inventory/ops/") && !hasPermission(claims, roleStr,
+                                HttpMethod.GET.equals(request.getMethod()) ? "inventory:read" : "inventory:manage")) {
+                            return onError(exchange, "Inventory access requires an assigned tenant permission", HttpStatus.FORBIDDEN);
+                        }
+
+                        boolean isUserDirectoryRead = "/api/users".equals(path) && HttpMethod.GET.equals(request.getMethod());
+                        boolean isUserRoleOrStatusChange = path.matches("^/api/users/\\d+/(role|status)$");
+                        if (path.startsWith("/api/access") && !hasPermission(claims, roleStr, "roles:manage") && !legacyAdmin(roleStr, hasPermissionClaim)) {
+                            return onError(exchange, "Role-management permission required", HttpStatus.FORBIDDEN);
+                        }
+                        if (isUserDirectoryRead && !hasPermission(claims, roleStr, "users:read") && !legacyAdmin(roleStr, hasPermissionClaim)) {
+                            return onError(exchange, "User-directory permission required", HttpStatus.FORBIDDEN);
+                        }
+                        if (isUserRoleOrStatusChange && !hasPermission(claims, roleStr, "users:manage") && !legacyAdmin(roleStr, hasPermissionClaim)) {
+                            return onError(exchange, "User-management permission required", HttpStatus.FORBIDDEN);
+                        }
+
+                        Matcher userAccountPath = Pattern.compile("^/api/users/(\\d+)(?:/(.*))?$").matcher(path);
+                        if (userAccountPath.matches()) {
+                            String targetUserId = userAccountPath.group(1);
+                            String accountAction = userAccountPath.group(2);
+                            if (accountAction != null && accountAction.startsWith("loyalty/earn")
+                                    && !hasPermission(claims, roleStr, "loyalty:manage") && !legacyStaff(roleStr, hasPermissionClaim)) {
+                                return onError(exchange, "Staff role required to award loyalty points", HttpStatus.FORBIDDEN);
+                            }
+                            boolean selfAccount = userId != null && targetUserId.equals(String.valueOf(userId));
+                            boolean manageAccount = accountAction != null && accountAction.matches("(role|status)")
+                                    && hasPermission(claims, roleStr, "users:manage");
+                            if (!selfAccount && !manageAccount && !hasPermission(claims, roleStr, "users:read")) {
+                                return onError(exchange, "Users may only access their own account without users:read permission", HttpStatus.FORBIDDEN);
+                            }
+                        }
+
+                        // RBAC Check for Admin paths
+                        if (path.contains("/admin") || path.contains("/dlq") || path.startsWith("/api/platform/")) {
+                            String requiredPermission = routePermission(path, request.getMethod());
+                            if (requiredPermission == null) requiredPermission = "application:admin";
+                            if (path.startsWith("/api/platform/") && !isSuperAdmin) {
+                                return onError(exchange, "Platform Super Admin access is required", HttpStatus.FORBIDDEN);
+                            }
+                            if (!hasPermission(claims, roleStr, requiredPermission)
+                                    && !legacyStaff(roleStr, hasPermissionClaim)) {
+                                return onError(exchange, "Access denied: permission " + requiredPermission + " is required", HttpStatus.FORBIDDEN);
+                            }
+                        }
+
+                        // Strip client-supplied user headers and inject verified claims
+                        ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                                .headers(h -> {
+                                    h.remove("X-User-Id");
+                                    h.remove("X-User-Email");
+                                    h.remove("X-User-Role");
+                                    h.remove("X-User-Roles");
+                                    h.remove("X-User-Permissions");
+                                    h.remove("X-Tenant-ID");
+                                    h.remove("X-Application-Code");
+                                    h.remove("X-Service-Token");
+                                })
+                                .header("X-User-Id", userId != null ? String.valueOf(userId) : "")
+                                .header("X-User-Email", userEmail != null ? userEmail : "")
+                                .header("X-User-Role", isSuperAdmin ? "ADMIN" : roleStr)
+                                .header("X-User-Roles", roleStr)
+                                .header("X-User-Permissions", permissionHeader(claims))
+                                .header("X-Tenant-ID", claims.get("tenant_id", String.class) != null ? claims.get("tenant_id", String.class) : "")
+                                .header("X-Application-Code", claims.get("application_code", String.class) != null ? claims.get("application_code", String.class) : "")
+                                .build();
+
+                        return chain.filter(exchange.mutate().request(mutatedRequest).build());
+                    } catch (Exception e) {
+                        return onError(exchange, "Failed to parse security claims: " + e.getMessage(), HttpStatus.UNAUTHORIZED);
+                    }
+                });
     }
 
     private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus httpStatus) {
