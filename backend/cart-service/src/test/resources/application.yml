@@ -32,6 +32,11 @@ ucp:
     publisher:
       enabled: false          # no broker in tests; events stay in the table where tests can read them
 
+jwt:
+  secret: test-jwt-secret-key-for-cart-svc-x
+  issuer: universal-commerce
+  audience: commerce-api
+
 eureka:
   client:
     enabled: false

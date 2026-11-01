@@ -8,10 +8,12 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface LoyaltyAccountRepository extends JpaRepository<LoyaltyAccount, Long> {
     Optional<LoyaltyAccount> findByUserId(Long userId);
+    Optional<LoyaltyAccount> findByUserIdAndTenantId(Long userId, UUID tenantId);
     List<LoyaltyAccount> findAllByTier(LoyaltyTier tier);
     long countByTier(LoyaltyTier tier);
 

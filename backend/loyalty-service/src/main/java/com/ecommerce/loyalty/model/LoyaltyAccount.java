@@ -6,6 +6,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "loyalty_accounts")
@@ -15,8 +16,12 @@ public class LoyaltyAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
+    // Not unique alone — uniqueness is now (user_id, tenant_id) enforced by DB index
+    @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    @Column(name = "tenant_id")
+    private UUID tenantId;
 
     @Column(name = "points_balance", nullable = false)
     private Integer pointsBalance = 0;
@@ -63,6 +68,9 @@ public class LoyaltyAccount {
 
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
+
+    public UUID getTenantId() { return tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
 
     public Integer getPointsBalance() { return pointsBalance; }
     public void setPointsBalance(Integer pointsBalance) { this.pointsBalance = pointsBalance; }

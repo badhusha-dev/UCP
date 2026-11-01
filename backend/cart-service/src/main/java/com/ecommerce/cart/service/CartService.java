@@ -15,6 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import com.ecommerce.cart.security.CartPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -34,13 +38,29 @@ public class CartService {
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
 
+    private UUID currentTenantId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CartPrincipal p) {
+            return p.tenantId();
+        }
+        return null;
+    }
+
     @Transactional
     public Cart getOrCreateCart(Long userId, String sessionToken) {
+        return getOrCreateCart(userId, sessionToken, currentTenantId());
+    }
+
+    @Transactional
+    public Cart getOrCreateCart(Long userId, String sessionToken, UUID tenantId) {
         if (userId != null) {
-            Optional<Cart> userCartOpt = cartRepository.findByUserIdAndStatus(userId, "ACTIVE");
+            Optional<Cart> userCartOpt = (tenantId != null)
+                    ? cartRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, "ACTIVE")
+                    : cartRepository.findByUserIdAndStatus(userId, "ACTIVE");
+
             if (userCartOpt.isPresent()) {
                 Cart userCart = userCartOpt.get();
-                // If there's an orphaned guest cart with this sessionToken, merge its items
+                // Merge an orphaned guest cart with this sessionToken if present
                 if (sessionToken != null && !sessionToken.isBlank()) {
                     cartRepository.findBySessionTokenAndStatus(sessionToken, "ACTIVE")
                             .ifPresent(guestCart -> {
@@ -58,6 +78,9 @@ public class CartService {
                 if (guestCartOpt.isPresent()) {
                     Cart claimedCart = guestCartOpt.get();
                     claimedCart.setUserId(userId);
+                    if (tenantId != null) {
+                        claimedCart.setTenantId(tenantId);
+                    }
                     return cartRepository.save(claimedCart);
                 }
             }
@@ -65,6 +88,7 @@ public class CartService {
             // Create fresh cart for authenticated user
             Cart newCart = Cart.builder()
                     .userId(userId)
+                    .tenantId(tenantId)
                     .sessionToken(sessionToken != null ? sessionToken : UUID.randomUUID().toString())
                     .status("ACTIVE")
                     .currency("USD")
@@ -73,7 +97,7 @@ public class CartService {
             return cartRepository.save(newCart);
         }
 
-        // Guest session
+        // Guest session — no tenantId
         String effectiveToken = (sessionToken != null && !sessionToken.isBlank())
                 ? sessionToken
                 : "guest_" + UUID.randomUUID();

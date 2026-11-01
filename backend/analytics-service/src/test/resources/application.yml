@@ -58,3 +58,8 @@ resilience4j:
       orderServiceRetry:
         maxAttempts: 2
         waitDuration: 100ms
+
+jwt:
+  secret: test-jwt-secret-key-for-analytics-svc
+  issuer: universal-commerce
+  audience: commerce-api

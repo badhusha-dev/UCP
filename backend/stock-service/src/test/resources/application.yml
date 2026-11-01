@@ -41,3 +41,8 @@ ucp:
     initialize-schema: true   # H2 schema comes from entities; create outbox_events explicitly
     publisher:
       enabled: false          # no broker in tests
+
+jwt:
+  secret: test-jwt-secret-key-for-stock-svc-x
+  issuer: universal-commerce
+  audience: commerce-api

@@ -11,7 +11,7 @@ import java.util.Locale;
 import java.util.Set;
 
 public class StaffAccessFilter extends OncePerRequestFilter {
-    private static final Set<String> STAFF = Set.of("ADMIN", "ROLE_ADMIN", "MANAGER", "ROLE_MANAGER");
+    private static final Set<String> STAFF = Set.of("ADMIN", "ROLE_ADMIN", "MANAGER", "ROLE_MANAGER", "SUPER_ADMIN", "ROLE_SUPER_ADMIN");
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) { return !request.getRequestURI().startsWith("/api/crm/"); }
 
