@@ -85,7 +85,34 @@ Includes `testInternalAccountingRefusesWrongServiceToken`, added in this audit.
 
 `./mvnw -B -ntp -fae test` from `backend/`, log in the scratchpad (`backend-full-test.log`).
 
-_Pending at the time of writing. This section is updated when the run completes._
+**Result: `BUILD SUCCESS`. All 19 reactor modules passed. 385 tests executed, 380 passed, 0 failed, 0 errors, 5 skipped.**
+
+| Module | Executed | Failed | Errors | Skipped |
+|---|---|---|---|---|
+| user-service | 12 | 0 | 0 | 0 |
+| product-service | 77 | 0 | 0 | 0 |
+| inventory-service | 27 | 0 | 0 | 0 |
+| stock-service | 9 | 0 | 0 | 0 |
+| cart-service | 7 | 0 | 0 | 0 |
+| loyalty-service | 8 | 0 | 0 | 0 |
+| accounting-service | 26 | 0 | 0 | 5 (Postgres) |
+| crm-service | 2 | 0 | 0 | 0 |
+| procurement-service | 8 | 0 | 0 | 0 |
+| analytics-service | 8 | 0 | 0 | 0 |
+| order-service | 99 | 0 | 0 | 0 |
+| notification-service | 9 | 0 | 0 | 0 |
+| api-gateway | 38 | 0 | 0 | 0 |
+| discovery-server | 1 | 0 | 0 | 0 |
+| config-server | 1 | 0 | 0 | 0 |
+| error-stack-service | 6 | 0 | 0 | 0 |
+| qa-service | 16 | 0 | 0 | 0 |
+| delivery-service | 31 | 0 | 0 | 0 |
+| parent POM | 0 | 0 | 0 | 0 |
+
+Notes:
+- The run started before `testInternalAccountingRefusesWrongServiceToken` was added, so accounting shows 26 here and 27 in the targeted run above.
+- Static `@Test` counts differ from executed counts (for example delivery 37 static, 31 executed; user 13 static, 12 executed). The difference comes from `@Test` annotations that are disabled, nested or otherwise not executed. The disabled tests were not inspected individually.
+- The Monitor script reported exit 1 after the run completed. That came from its own filter, not from Maven; the log shows `BUILD SUCCESS` and `BACKEND-EXIT 0`.
 
 ### Earlier targeted run (before this audit)
 
@@ -153,6 +180,6 @@ Not performed. No container was started. No browser session was run against a li
 | Frontend lint | 4 | 4 | 0 | 12 have no lint script |
 | Frontend unit tests | 76 | 76 | 0 | 12 workspaces have no tests |
 | Backend targeted tests | 27 | 22 | 0 | 5 skipped (Postgres) |
-| Backend full run | pending | pending | pending | — |
+| Backend full run | 385 | 380 | 0 | 5 (Postgres-gated) |
 | Compose and Kubernetes validation | 4 | 4 | 0 | — |
 | Container, cluster and E2E tests | 0 | 0 | 0 | All not run (environment) |

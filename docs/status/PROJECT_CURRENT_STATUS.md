@@ -48,7 +48,7 @@ Backend module results from the full run are in [TEST_AND_VERIFICATION_REPORT.md
 
 | Area | Status | Notes |
 |---|---|---|
-| Backend compilation | COMPLETED for the five modules targeted before commit `e7fe0017` and for accounting after this audit's change. Full compile: see the report. | — |
+| Backend compilation and tests | COMPLETED | Full run: `BUILD SUCCESS`, 19 of 19 modules, 385 executed, 380 passed, 0 failed, 5 skipped (Postgres-gated). |
 | Frontend production builds | COMPLETED | 16 of 16 workspaces. |
 | Frontend typecheck | PARTIALLY COMPLETED | 9 of 16 pass. 7 fail, mostly unused locals. |
 | Frontend lint | PARTIALLY COMPLETED | 4 workspaces define a lint script; all four pass. |
@@ -113,6 +113,7 @@ Backend module results from the full run are in [TEST_AND_VERIFICATION_REPORT.md
 - Stock-service internal endpoints reject an invalid service token (9 tests).
 - Inventory and procurement integration tests (27 and 8 tests in the earlier run).
 - Order-service: 99 tests passed in the earlier run.
+- Full backend test run: `BUILD SUCCESS`, 380 passed, 0 failed, 5 skipped (Postgres-gated).
 - Compose and Kubernetes manifests validate offline.
 - Flyway version numbers have no duplicates.
 

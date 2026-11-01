@@ -2,7 +2,7 @@
 
 Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLETION_ROADMAP.md).
 
-**Last verification:** 2026-11-01 (frontend builds, typecheck, lint, node tests, accounting module tests). Full backend run: see the status line below.
+**Last verification:** 2026-11-01 (frontend builds, typecheck, lint, node tests, accounting module tests). Full backend run: `BUILD SUCCESS` (see the verification log).
 
 ## Completed
 
@@ -23,7 +23,7 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 
 ## In progress
 
-- **Full backend test run** (`./mvnw -B -ntp -fae test`, 19 reactor modules). Started on 2026-11-01; log in the scratchpad as `backend-full-test.log`. A monitor watches for completion. When it finishes: update the backend section of TEST_AND_VERIFICATION_REPORT.md and the backend rows of PROJECT_CURRENT_STATUS.md.
+- None. The full backend test run finished (`BUILD SUCCESS`, see the verification log below) and its results are recorded in TEST_AND_VERIFICATION_REPORT.md and PROJECT_CURRENT_STATUS.md.
 - **Code fixes committed** (B-03, B-10, B-11) after targeted tests passed. The full run is a regression check, not a gate for these commits.
 
 ## Pending
@@ -68,4 +68,4 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | 2026-11-01 | `./mvnw -B -ntp -pl accounting-service test` | 27 run, 0 fail, 5 skipped |
 | 2026-11-01 | `docker compose config` (temporary token) | Valid, 46 services |
 | 2026-11-01 | `kubectl kustomize kubernetes` | Builds: 34 Deployments, 18 NetworkPolicies |
-| 2026-11-01 | Full backend run | Pending |
+| 2026-11-01 | Full backend run | `BUILD SUCCESS`; 19 of 19 modules; 385 executed, 380 passed, 0 failed, 5 skipped |
