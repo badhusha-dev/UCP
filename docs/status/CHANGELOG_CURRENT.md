@@ -67,6 +67,7 @@ None. No Flyway migration was added, edited or removed in this session.
 - Accounting: unknown ledger or transaction ID returns 404 (was 500). Rejected input returns 400 with `{"error": ...}` (was 500).
 - Services that read `SERVICE_TO_SERVICE_TOKEN` now fail at startup when it is unset (was: accept the public default). Compose and Kubernetes already required it.
 - crm-service and procurement-service are no longer reachable from the host on 8092 and 8093. Gateway access is unchanged.
+- Admin analytics dashboards (`mfe-analytics`, and `/analytics` in `mfe-order`) now name each section that failed to load, offer a Retry, and clear that section rather than keep figures from the previous time range (B-37).
 - Frontend containers are built from source. `dist/` is no longer committed, so a checkout without a local build cannot serve the MFEs from bind mounts.
 
 ## Configuration changes
