@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: procurement-service
+  cloud:
+    config:
+      enabled: false
+  datasource:
+    url: jdbc:h2:mem:procdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  flyway:
+    enabled: true
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+management:
+  tracing:
+    enabled: false
+jwt:
+  secret: procurement-test-signing-key-only-for-tests-2026
+  issuer: universal-commerce
+  audience: commerce-api

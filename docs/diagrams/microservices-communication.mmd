@@ -1,0 +1,29 @@
+sequenceDiagram
+    autonumber
+    actor Customer
+    participant GW as API Gateway (:8080)
+    participant US as User Service (:8081)
+    participant PS as Product Service (:8082)
+    participant OS as Order Service (:8083)
+    participant Broker as Kafka Broker (:9092)
+    participant NS as Notification Service (:8084)
+
+    Customer->>GW: POST /api/users/login
+    GW->>US: Validate Credentials
+    US-->>GW: Return Signed JWT Bearer Token
+    GW-->>Customer: 200 OK + JWT
+
+    Customer->>GW: GET /api/products
+    GW->>PS: Query Products (Check Redis L2)
+    PS-->>Customer: 200 OK (Product Catalog List)
+
+    Customer->>GW: POST /api/orders/checkout (with JWT)
+    GW->>OS: Validate Token & Forward Order Request
+    OS->>PS: POST /decrement-stock (Atomic Reservation)
+    PS-->>OS: 200 OK (Stock Deducted)
+    OS->>Broker: Publish OrderEvent (topic: order-events)
+    OS-->>Customer: 201 Created (Order #79 status: PLACED)
+
+    Broker->>NS: Consume OrderEvent (groupId: notification-group)
+    NS->>NS: Check Deduplication (processed_events)
+    NS-->>NS: Simulated Dispatch & Audit Log

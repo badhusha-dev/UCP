@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: error-stack-service
+  cloud:
+    config:
+      enabled: false
+  datasource:
+    url: jdbc:h2:mem:errorstackdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: never
+  kafka:
+    listener:
+      auto-startup: false
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: error-stack-test
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      bootstrap-servers: localhost:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+management:
+  tracing:
+    enabled: false
+  zipkin:
+    tracing:
+      endpoint: ""
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      errorCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10

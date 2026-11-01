@@ -1,0 +1,22 @@
+{
+    "timestamp":  "2026-10-21T23:12:31.7277854+05:30",
+    "totalRequests":  60,
+    "successfulRequests":  60,
+    "failedRequests":  0,
+    "errorRatePercent":  0,
+    "totalDurationSeconds":  2.27,
+    "throughputRps":  26.43,
+    "latenciesMs":  {
+                        "average":  37.65,
+                        "p90":  83.61,
+                        "p50":  19.22,
+                        "max":  97.06,
+                        "p95":  93.33,
+                        "p99":  97.06
+                    },
+    "slaCompliance":  {
+                          "p95Passed":  true,
+                          "p99Passed":  true,
+                          "errorRatePassed":  true
+                      }
+}

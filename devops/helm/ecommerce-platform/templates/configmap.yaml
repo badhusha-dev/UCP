@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ecommerce-platform.fullname" . }}-config
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+data:
+  SPRING_PROFILES_ACTIVE: {{ .Values.config.activeProfiles | quote }}
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: {{ .Values.config.eurekaUrl | quote }}
+  CONFIG_SERVER_URL: {{ .Values.config.configServerUrl | quote }}
+  ZIPKIN_BASE_URL: {{ .Values.config.zipkinUrl | quote }}
+  LOGSTASH_HOST: {{ .Values.config.logstashHost | quote }}
+  LOGSTASH_PORT: {{ .Values.config.logstashPort | quote }}
+  KAFKA_BOOTSTRAP_SERVERS: {{ .Values.config.kafkaBootstrapServers | quote }}
+  REDIS_HOST: {{ .Values.config.redisHost | quote }}
+  REDIS_PORT: {{ .Values.config.redisPort | quote }}
+  POSTGRES_HOST: {{ .Values.config.postgresHost | quote }}
+  POSTGRES_PORT: {{ .Values.config.postgresPort | quote }}

@@ -1,0 +1,13 @@
+# Administrator guide — Order Management
+
+Open **Operations → Order Management**. Menu items you see depend on your permissions (roles: Order Manager, Order Operator, Order Support Agent, Order Analyst).
+
+- **Order Dashboard**: choose dates, store, vendor, type, payment and fulfillment status. Queue tiles show *now*; delivered/cancelled/failed count orders created in the range. Averages show "—" until enough orders have reached that stage.
+- **All Orders and the status views** (New, Pending Confirmation, Processing, Ready for Fulfillment, Partially Fulfilled, Shipped, Out for Delivery, Delivered, Cancelled, Failed, On-Hold): search by order number (customer name/email/phone only if you may see customer details), open **Filters** for dates, amount, store, vendor, payment, fulfillment, operator and SLA. Click a heading to sort, **shift-click** to add a second sort. Save a view (filters + sort + columns), choose columns, export CSV (needs export permission). Tick rows to run a **bulk action**: pick the action, press **Preview** to see which orders qualify, then **Confirm and run**. Orders that no longer qualify are skipped and reported.
+- **Order page**: *Actions* shows only moves allowed from the current status; blocked moves are listed with the reason (e.g. "Set by the Payment side", "Owned by the Delivery service"). Hold, cancel, request cancellation and reject ask for a reason that is kept in the audit trail. Tabs: Overview, Timeline, Fulfillment (allocate items per location, pack, ship, split shipments; restaurants use the kitchen buttons instead), Payment (read-only: payment and refund come from the Payment/Accounting system), Customer, Notes & Communication, Audit.
+- **Restaurant orders**: Accept (with estimated minutes) or Reject (with reason) → Start preparing → Ready for pickup → Picked up. Report a delay with a reason and a new estimate.
+- **Order Exceptions**: problems are detected from order state and your SLA thresholds (payment failures, awaiting confirmation, stuck processing, inventory shortage, fulfillment/delivery failures, repeated delivery failure, cancellation requests, refund delays). *Scan now* refreshes; assign, escalate (note required) and resolve (note required). Cleared conditions resolve themselves.
+- **Returns & Refund Requests**: read-only window; process returns in Returns & Refund Management. A refund shows *Refund pending* until the payment system confirms it.
+- **Order Settings**: SLA minutes per phase, "require confirmed payment before processing", max orders per bulk run.
+
+If a change is refused with "changed by someone else", reload — another user updated the order first. Double-clicking a confirm is safe: each action carries a one-time key.

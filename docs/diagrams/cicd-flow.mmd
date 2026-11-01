@@ -1,0 +1,27 @@
+graph LR
+    subgraph Commit_Phase ["Code Commit & Review"]
+        Git["Git Push / Pull Request"]
+    end
+
+    subgraph CI_Pipeline ["GitHub Actions CI Pipeline"]
+        B1["Maven Compile & Unit Tests"]
+        B2["OpenAPI Contract Tests"]
+        B3["OWASP Dependency Check"]
+        B4["Frontend oxlint & Vite Build"]
+        B5["Docker Image Build & Package"]
+    end
+
+    subgraph CD_Pipeline ["Release & Delivery"]
+        H1["Helm Chart Lint & Package"]
+        K1["Kubernetes Dry-Run Delivery"]
+        D1["Publish Release Archive (.zip)"]
+    end
+
+    Git --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> B5
+    B5 --> H1
+    H1 --> K1
+    K1 --> D1

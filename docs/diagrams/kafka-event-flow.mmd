@@ -1,0 +1,28 @@
+graph LR
+    subgraph Publisher ["Order Service (:8083)"]
+        Tx["Order Checkout Complete"]
+        Producer["Kafka Producer (enable.idempotence=true)"]
+    end
+
+    subgraph Broker ["Kafka Broker (:9092)"]
+        Topic["Topic: order-events (4 Partitions, Key: orderId)"]
+    end
+
+    subgraph Consumer ["Notification Service (:8084)"]
+        Listener["@KafkaListener (groupId: notification-group)"]
+        Deduplication{"Check processed_events table"}
+        Process["Simulate Dispatch & Record Notification"]
+        SaveDone["INSERT INTO processed_events"]
+        Retry{"Failure Occurs?"}
+        DLT["@DltHandler -> INSERT INTO dead_letter_events"]
+    end
+
+    Tx --> Producer
+    Producer -->|Key: orderId| Topic
+    Topic --> Listener
+    Listener --> Deduplication
+    Deduplication -- New Event --> Process
+    Deduplication -- Already Handled --> Ignore["Drop Duplicate Safely"]
+    Process --> SaveDone
+    Process -.->|Exception| Retry
+    Retry -- Retries Exhausted (3x) --> DLT

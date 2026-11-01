@@ -1,0 +1,15 @@
+CREATE DATABASE user_db;
+CREATE DATABASE product_db;
+CREATE DATABASE inventory_db;
+CREATE DATABASE stock_db;
+CREATE DATABASE cart_db;
+CREATE DATABASE order_db;
+CREATE DATABASE loyalty_db;
+CREATE DATABASE accounting_db;
+CREATE DATABASE analytics_db;
+CREATE DATABASE notification_db;
+CREATE DATABASE error_stack_db;
+CREATE DATABASE crm_db;
+CREATE DATABASE procurement_db;
+CREATE DATABASE qa_db;
+CREATE DATABASE delivery_db;

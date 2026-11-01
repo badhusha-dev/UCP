@@ -1,0 +1,31 @@
+graph TD
+    subgraph Host_Container ["Host Shell: shell-app (Port 3000)"]
+        Nav["Global Navigation & Header"]
+        Redux["Global Auth State (JWT)"]
+        Router["React Router DOM 7"]
+    end
+
+    subgraph Product_Remote ["mfe-product (Port 3001)"]
+        Catalog["ProductCatalog Component"]
+        Detail["ProductDetail Component"]
+        Filter["Category & Price Filters"]
+    end
+
+    subgraph Order_Remote ["mfe-order (Port 3002)"]
+        Cart["CartDrawer Component"]
+        Checkout["CheckoutModal Component"]
+        History["OrderHistory Component"]
+    end
+
+    subgraph User_Remote ["mfe-user (Port 3003)"]
+        Auth["AuthModal (Login / Register)"]
+        Profile["UserProfile Component"]
+        Address["AddressManager Component"]
+    end
+
+    Host_Container -->|Dynamic Import remoteEntry.js| Product_Remote
+    Host_Container -->|Dynamic Import remoteEntry.js| Order_Remote
+    Host_Container -->|Dynamic Import remoteEntry.js| User_Remote
+
+    Product_Remote -.->|Window CustomEvent ucp:cart:add| Order_Remote
+    User_Remote -.->|Dispatches Auth Token to Redux| Host_Container

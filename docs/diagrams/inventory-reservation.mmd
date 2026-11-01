@@ -1,0 +1,13 @@
+graph TD
+    Start["Order Service: Checkout Triggered"] --> Check["Call product-service decrement API"]
+    Check --> SQL["Execute SQL: UPDATE products SET stock = stock - qty WHERE id = ? AND stock >= qty"]
+    SQL --> Rows{"Rows Affected == 1?"}
+    
+    Rows -- Yes --> Reserved["Stock Atomically Deducted"]
+    Reserved --> Evict["Evict Redis Cache key: products::{id}"]
+    Evict --> CommitOrder["Commit Order in order_db (Status: PLACED)"]
+    CommitOrder --> Success["Return HTTP 201 Created"]
+
+    Rows -- No --> Reject["InsufficientStockException Thrown"]
+    Reject --> Rollback["Rollback Order Service Transaction"]
+    Rollback --> Fail["Return HTTP 409 Conflict to Client"]

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <!-- Spring Boot colour converters -->
+    <conversionRule conversionWord="clr"
+                    converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
+    <conversionRule conversionWord="wex"
+                    converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter"/>
+    <conversionRule conversionWord="wEx"
+                    converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter"/>
+
+    <!-- Spring properties -->
+    <springProperty scope="context" name="APP_NAME"      source="spring.application.name"  defaultValue="notification-service"/>
+    <springProperty scope="context" name="LOGSTASH_HOST" source="logstash.host"             defaultValue="localhost"/>
+    <springProperty scope="context" name="LOGSTASH_PORT" source="logstash.port"             defaultValue="5000"/>
+
+    <!-- Console Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p){highlight} %clr([${APP_NAME}]){cyan} %clr([traceId=%X{traceId:-} spanId=%X{spanId:-}]){yellow} %clr(%-40.40logger{39}){cyan} : %m%n%wex</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Logstash TCP Appender -->
+    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>${LOGSTASH_HOST}:${LOGSTASH_PORT}</destination>
+        <reconnectionDelay>10 seconds</reconnectionDelay>
+        <keepAliveMessage>-</keepAliveMessage>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"service":"${APP_NAME}"}</customFields>
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>spanId</includeMdcKeyName>
+            <timeZone>UTC</timeZone>
+            <shortenedLoggerNameLength>36</shortenedLoggerNameLength>
+            <includeCallerData>false</includeCallerData>
+        </encoder>
+    </appender>
+
+    <!-- Async Logstash Appender -->
+    <appender name="ASYNC_LOGSTASH" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="LOGSTASH"/>
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>512</queueSize>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <!-- Noise reduction -->
+    <logger name="org.springframework"       level="INFO"/>
+    <logger name="org.hibernate"             level="WARN"/>
+    <logger name="com.netflix"               level="WARN"/>
+    <logger name="io.lettuce"                level="WARN"/>
+    <logger name="org.apache.kafka"          level="WARN"/>
+    <logger name="org.springframework.cloud" level="INFO"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_LOGSTASH"/>
+    </root>
+
+</configuration>

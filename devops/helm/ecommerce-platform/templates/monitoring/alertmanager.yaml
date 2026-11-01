@@ -1,0 +1,122 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.alertmanager.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ecommerce-platform.fullname" . }}-alertmanager-config
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: alertmanager
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: 'ecommerce-default-webhook'
+      group_by: ['alertname', 'service', 'severity']
+      group_wait: 10s
+      group_interval: 30s
+      repeat_interval: 1h
+      routes:
+        - match:
+            severity: critical
+          receiver: 'pagerduty-critical'
+          continue: true
+        - match:
+            severity: critical
+          receiver: 'slack-critical-alerts'
+        - match:
+            severity: warning
+          receiver: 'slack-warning-alerts'
+    receivers:
+      - name: 'ecommerce-default-webhook'
+        webhook_configs:
+          - url: 'http://{{ include "ecommerce-platform.fullname" . }}-api-gateway:8080/actuator/health'
+            send_resolved: true
+      - name: 'slack-critical-alerts'
+        slack_configs:
+          - api_url: 'https://hooks.slack.com/services/REPLACE_ME/REPLACE_ME/REPLACE_ME'
+            channel: '#ecommerce-critical-alerts'
+            send_resolved: true
+      - name: 'slack-warning-alerts'
+        slack_configs:
+          - api_url: 'https://hooks.slack.com/services/REPLACE_ME/REPLACE_ME/REPLACE_ME'
+            channel: '#ecommerce-warnings'
+            send_resolved: true
+      - name: 'pagerduty-critical'
+        pagerduty_configs:
+          - routing_key: 'pd-ecommerce-production-routing-key'
+            severity: 'critical'
+            send_resolved: true
+            description: '{{ .CommonAnnotations.summary }}'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ecommerce-platform.fullname" . }}-alertmanager
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: alertmanager
+spec:
+  replicas: {{ .Values.monitoring.alertmanager.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ecommerce-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: alertmanager
+  template:
+    metadata:
+      labels:
+        {{- include "ecommerce-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: "{{ .Values.monitoring.alertmanager.image.repository }}:{{ .Values.monitoring.alertmanager.image.tag }}"
+          imagePullPolicy: {{ .Values.monitoring.alertmanager.image.pullPolicy }}
+          args:
+            - "--config.file=/etc/alertmanager/alertmanager.yml"
+            - "--storage.path=/alertmanager"
+            - "--web.external-url=http://localhost:9093"
+          ports:
+            - name: http
+              containerPort: {{ .Values.monitoring.alertmanager.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.monitoring.alertmanager.resources | nindent 12 }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/alertmanager
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ include "ecommerce-platform.fullname" . }}-alertmanager-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ecommerce-platform.fullname" . }}-alertmanager
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: alertmanager
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.monitoring.alertmanager.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "ecommerce-platform.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: alertmanager
+{{- end }}

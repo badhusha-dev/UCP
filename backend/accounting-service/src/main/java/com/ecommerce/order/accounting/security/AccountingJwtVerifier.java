@@ -1,0 +1,43 @@
+package com.ecommerce.order.accounting.security;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.util.Date;
+
+@Component
+public class AccountingJwtVerifier {
+    public static final String APPLICATION_CODE = "ACCOUNTING";
+
+    @Value("${jwt.secret}")
+    private String secret;
+
+    @Value("${jwt.issuer:universal-commerce}")
+    private String issuer;
+
+    @Value("${jwt.audience:commerce-api}")
+    private String audience;
+
+    /** Signature and expiry are verified here; returns null for anything invalid. */
+    public Claims verify(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder().setSigningKey(Keys.hmacShaKeyFor(secret.getBytes())).build()
+                    .parseClaimsJws(token).getBody();
+            return claims.getExpiration() != null && claims.getExpiration().after(new Date()) ? claims : null;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    public boolean isTenantAccountingToken(Claims claims) {
+        return issuer.equals(claims.getIssuer())
+                && audience.equals(claims.getAudience())
+                && APPLICATION_CODE.equals(claims.get("application_code", String.class))
+                && claims.get("tenant_id", String.class) != null
+                && claims.get("tenant_role", String.class) != null
+                && claims.getId() != null;
+    }
+}

@@ -1,0 +1,57 @@
+{
+  "name": "ecommerce-frontend-workspace",
+  "private": true,
+  "workspaces": [
+    "shared-library",
+    "shell-app",
+    "mfe-product",
+    "mfe-order",
+    "mfe-user",
+    "mfe-inventory",
+    "mfe-stock",
+    "mfe-cart",
+    "mfe-loyalty",
+    "mfe-accounting",
+    "mfe-analytics",
+    "mfe-error-stack",
+    "mfe-crm",
+    "mfe-procurement",
+    "mfe-super-admin",
+    "mfe-delivery"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=shared-library && npm run build --workspace=mfe-product && npm run build --workspace=mfe-order && npm run build --workspace=mfe-user && npm run build --workspace=mfe-inventory && npm run build --workspace=mfe-stock && npm run build --workspace=mfe-cart && npm run build --workspace=mfe-loyalty && npm run build --workspace=mfe-accounting && npm run build --workspace=mfe-analytics && npm run build --workspace=mfe-error-stack && npm run build --workspace=mfe-crm && npm run build --workspace=mfe-procurement && npm run build --workspace=mfe-super-admin && npm run build --workspace=mfe-delivery && npm run build --workspace=shell-app",
+    "build:shared": "npm run build --workspace=shared-library",
+    "build:shell": "npm run build --workspace=shell-app",
+    "build:product": "npm run build --workspace=mfe-product",
+    "build:order": "npm run build --workspace=mfe-order",
+    "build:user": "npm run build --workspace=mfe-user",
+    "build:inventory": "npm run build --workspace=mfe-inventory",
+    "build:stock": "npm run build --workspace=mfe-stock",
+    "build:cart": "npm run build --workspace=mfe-cart",
+    "build:loyalty": "npm run build --workspace=mfe-loyalty",
+    "build:accounting": "npm run build --workspace=mfe-accounting",
+    "build:analytics": "npm run build --workspace=mfe-analytics",
+    "build:error-stack": "npm run build --workspace=mfe-error-stack",
+    "build:crm": "npm run build --workspace=mfe-crm",
+    "build:procurement": "npm run build --workspace=mfe-procurement",
+    "build:super-admin": "npm run build --workspace=mfe-super-admin",
+    "build:delivery": "npm run build --workspace=mfe-delivery",
+    "test": "npm run test --workspace=shared-library",
+    "test:shared": "npm run test --workspace=shared-library"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1"
+  },
+  "overrides": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1"
+  }
+}

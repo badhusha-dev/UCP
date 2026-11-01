@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: microservice
+spec:
+  replicas: {{ .Values.services.userService.replicaCount }}
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.services.userService.image }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.services.userService.port }}
+              name: http
+          envFrom:
+            - configMapRef:
+                name: {{ include "ecommerce-platform.fullname" . }}-config
+            - secretRef:
+                name: {{ include "ecommerce-platform.fullname" . }}-secrets
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://{{ .Values.config.postgresHost }}:{{ .Values.config.postgresPort }}/user_db"
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ecommerce-platform.fullname" . }}-secrets
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ecommerce-platform.fullname" . }}-secrets
+                  key: POSTGRES_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ecommerce-platform.fullname" . }}-secrets
+                  key: JWT_SECRET
+          resources:
+            {{- toYaml .Values.services.userService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: {{ .Values.services.userService.port }}
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: {{ .Values.services.userService.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.services.userService.port }}
+      targetPort: {{ .Values.services.userService.port }}
+      name: http
+  selector:
+    app: user-service

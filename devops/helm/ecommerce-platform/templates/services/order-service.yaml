@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: microservice
+spec:
+  replicas: {{ .Values.services.orderService.replicaCount }}
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.services.orderService.image }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.services.orderService.port }}
+              name: http
+          envFrom:
+            - configMapRef:
+                name: {{ include "ecommerce-platform.fullname" . }}-config
+            - secretRef:
+                name: {{ include "ecommerce-platform.fullname" . }}-secrets
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://{{ .Values.config.postgresHost }}:{{ .Values.config.postgresPort }}/order_db"
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ecommerce-platform.fullname" . }}-secrets
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ecommerce-platform.fullname" . }}-secrets
+                  key: POSTGRES_PASSWORD
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              value: {{ .Values.config.kafkaBootstrapServers | quote }}
+          resources:
+            {{- toYaml .Values.services.orderService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: {{ .Values.services.orderService.port }}
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: {{ .Values.services.orderService.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.services.orderService.port }}
+      targetPort: {{ .Values.services.orderService.port }}
+      name: http
+  selector:
+    app: order-service

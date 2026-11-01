@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: cart-service
+  cloud:
+    config:
+      enabled: false
+  datasource:
+    url: jdbc:h2:mem:cartdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: never
+  kafka:
+    bootstrap-servers: localhost:9092
+    # Cart events are best-effort; without a broker each send would block 60s (default max.block.ms) per test call.
+    producer:
+      properties:
+        max.block.ms: 500
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+management:
+  tracing:
+    enabled: false
+  zipkin:
+    tracing:
+      endpoint: ""

@@ -1,0 +1,27 @@
+# Secrets
+.env
+*.pem
+*.key
+*.jks
+*.p12
+
+# Build output
+target/
+dist/
+node_modules/
+
+# IDE
+.idea/
+*.iml
+
+# Files that currently hold real-looking credentials; move to a secret manager / template before tracking
+kubernetes/base/02-secrets.yml
+*.tfvars
+*.tfstate
+*.tfstate.*
+
+# Nested git repository (config server's own repo, committed separately)
+backend/config-repo/
+
+# Local-only test credentials for dev seed scripts
+scripts/dev-seed/*.env

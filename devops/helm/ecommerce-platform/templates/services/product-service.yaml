@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: microservice
+spec:
+  replicas: {{ .Values.services.productService.replicaCount }}
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      containers:
+        - name: product-service
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.services.productService.image }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.services.productService.port }}
+              name: http
+          envFrom:
+            - configMapRef:
+                name: {{ include "ecommerce-platform.fullname" . }}-config
+            - secretRef:
+                name: {{ include "ecommerce-platform.fullname" . }}-secrets
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://{{ .Values.config.postgresHost }}:{{ .Values.config.postgresPort }}/product_db"
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ecommerce-platform.fullname" . }}-secrets
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ecommerce-platform.fullname" . }}-secrets
+                  key: POSTGRES_PASSWORD
+            - name: SPRING_DATA_REDIS_HOST
+              value: {{ .Values.config.redisHost | quote }}
+            - name: SPRING_DATA_REDIS_PORT
+              value: {{ .Values.config.redisPort | quote }}
+          resources:
+            {{- toYaml .Values.services.productService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: {{ .Values.services.productService.port }}
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: {{ .Values.services.productService.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.services.productService.port }}
+      targetPort: {{ .Values.services.productService.port }}
+      name: http
+  selector:
+    app: product-service

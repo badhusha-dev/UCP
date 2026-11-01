@@ -1,0 +1,115 @@
+name: Kubernetes & Helm Release CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+    paths:
+      - 'kubernetes/**'
+      - 'devops/helm/**'
+      - '.github/workflows/cd-release.yml'
+  workflow_dispatch:
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # 1. KUBERNETES MANIFEST VALIDATION (Kustomize)
+  # ──────────────────────────────────────────────────────────────────────────
+  k8s-validate:
+    name: Validate Kubernetes Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Validate Master Kustomization
+        run: |
+          echo "Building multi-tier resource graph with Kustomize..."
+          kubectl kustomize kubernetes/ > /dev/null
+          echo "Kustomize resource graph built successfully."
+
+      - name: Validate GitOps Manifests & Progressive Canary Delivery
+        run: |
+          echo "Validating GitOps & Flagger kustomization..."
+          kubectl kustomize kubernetes/gitops/ > /dev/null
+          echo "Running Progressive Canary Delivery simulation..."
+          chmod +x devops/scripts/simulate-canary.sh
+          ./devops/scripts/simulate-canary.sh
+
+      - name: Validate Enterprise Service Mesh (Istio & Envoy)
+        run: |
+          echo "Validating Service Mesh kustomization..."
+          kubectl kustomize kubernetes/mesh/ > /dev/null
+          echo "Running Service Mesh simulation (Strict mTLS, Traffic Shift, Outlier Detection)..."
+          chmod +x devops/scripts/simulate-istio-mesh.sh
+          ./devops/scripts/simulate-istio-mesh.sh
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 2. HELM CHART LINT, TEMPLATE & PACKAGE
+  # ──────────────────────────────────────────────────────────────────────────
+  helm-lint-package:
+    name: Helm Lint, Template & Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Helm CLI
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Helm Lint (Base Values)
+        run: helm lint devops/helm/ecommerce-platform
+
+      - name: Helm Lint (Dev Profile)
+        run: helm lint devops/helm/ecommerce-platform -f devops/helm/ecommerce-platform/values-dev.yaml
+
+      - name: Helm Lint (Prod Profile)
+        run: helm lint devops/helm/ecommerce-platform -f devops/helm/ecommerce-platform/values-prod.yaml
+
+      - name: Test Helm Template Rendering
+        run: |
+          echo "Rendering templates with base values..."
+          helm template test-release devops/helm/ecommerce-platform > /dev/null
+          echo "Rendering templates with prod values..."
+          helm template test-release devops/helm/ecommerce-platform -f devops/helm/ecommerce-platform/values-prod.yaml > /dev/null
+
+      - name: Package Helm Release Archive
+        run: |
+          mkdir -p devops/helm/dist
+          helm package devops/helm/ecommerce-platform -d devops/helm/dist/
+
+      - name: Upload Helm Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-release-package
+          path: devops/helm/dist/*.tgz
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 3. DRY-RUN STAGING / PROD DEPLOYMENT
+  # ──────────────────────────────────────────────────────────────────────────
+  simulate-deploy:
+    name: Staging Dry-Run Deployment Simulation
+    runs-on: ubuntu-latest
+    needs: [k8s-validate, helm-lint-package]
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Simulate Dry-Run Helm Upgrade / Install
+        run: |
+          echo "Simulating production Helm upgrade..."
+          helm upgrade --dry-run --install ecommerce-prod devops/helm/ecommerce-platform \
+            -f devops/helm/ecommerce-platform/values-prod.yaml \
+            --namespace ecommerce-prod --create-namespace
+          echo "Dry-run deployment simulation successful."

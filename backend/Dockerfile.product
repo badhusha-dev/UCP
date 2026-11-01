@@ -1,0 +1,9 @@
+FROM eclipse-temurin:17-jre-alpine
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN mkdir -p /data/storefront-media && chown appuser:appgroup /data/storefront-media
+WORKDIR /app
+COPY product-service/target/*.jar /app/app.jar
+USER appuser:appgroup
+EXPOSE 8082
+ENTRYPOINT ["java","-jar","/app/app.jar"]
+

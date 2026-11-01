@@ -1,0 +1,13 @@
+graph TD
+    Client["Inbound Client Request"] --> GW_CB{"Gateway Circuit Breaker"}
+    
+    GW_CB -- Closed --> Downstream["Call Microservice"]
+    GW_CB -- Open --> Fallback["Execute Fallback Controller (Return HTTP 503 JSON)"]
+    
+    Downstream --> Svc_CB{"Microservice Circuit Breaker"}
+    Svc_CB -- Closed --> Execution["Execute Database / RestTemplate Call"]
+    Svc_CB -- Open --> CacheFallback["Return Cached L2 Snapshot"]
+    
+    Execution -- Latency > 3000ms --> Timeout["TimeLimiter TimeoutException"]
+    Timeout --> Svc_CB
+    Execution -- Success --> Response["Return HTTP 200 OK"]

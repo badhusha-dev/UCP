@@ -1,0 +1,11 @@
+stateDiagram-v2
+    [*] --> PLACED : Checkout Completed & Inventory Reserved
+    
+    PLACED --> CONFIRMED : Payment Captured / Manager Approved
+    CONFIRMED --> SHIPPED : Dispatched from Warehouse (Tracking Attached)
+    SHIPPED --> DELIVERED : Confirmed Delivery by Carrier
+    DELIVERED --> [*]
+
+    PLACED --> CANCELLED : Customer Cancellation
+    CONFIRMED --> CANCELLED : Admin Cancellation Before Dispatch
+    CANCELLED --> [*] : Compensating Inventory Restock

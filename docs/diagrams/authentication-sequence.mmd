@@ -1,0 +1,20 @@
+sequenceDiagram
+    autonumber
+    actor User as Client Browser
+    participant UI as User MFE (:3003)
+    participant Shell as Storefront Shell (:3000)
+    participant GW as API Gateway (:8080)
+    participant US as User Service (:8081)
+    participant DB as PostgreSQL (user_db)
+
+    User->>UI: Submit Login (admin@ecommerce.com / password123)
+    UI->>GW: POST /api/users/login
+    GW->>US: Forward Login Payload
+    US->>DB: SELECT * FROM users WHERE email = ?
+    DB-->>US: User Entity (BCrypt Password Hash)
+    US->>US: passwordEncoder.matches(raw, hash)
+    US->>US: Mint JWT (HMAC-SHA256, roles=['ROLE_ADMIN'])
+    US-->>GW: Return Token & User Profile
+    GW-->>UI: 200 OK + JWT Bearer Token
+    UI->>Shell: Dispatch Token to Global Redux Store
+    Shell-->>User: Update Header (Display "Welcome, Admin")

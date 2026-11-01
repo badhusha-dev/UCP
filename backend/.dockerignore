@@ -1,0 +1,15 @@
+**/target/classes/
+**/target/test-classes/
+**/target/generated-sources/
+**/target/generated-test-sources/
+**/target/surefire-reports/
+**/target/failsafe-reports/
+.mvn/wrapper/dists/
+
+**/src/
+**/*.jar.original
+**/target/classes/
+legacy/
+config-repo/
+**/target/maven-*/
+**/target/*.original

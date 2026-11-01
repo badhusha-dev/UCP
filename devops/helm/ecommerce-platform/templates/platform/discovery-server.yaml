@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discovery-server
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: service-discovery
+spec:
+  replicas: {{ .Values.platform.discoveryServer.replicaCount }}
+  selector:
+    matchLabels:
+      app: discovery-server
+  template:
+    metadata:
+      labels:
+        app: discovery-server
+    spec:
+      containers:
+        - name: discovery-server
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.platform.discoveryServer.image }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.platform.discoveryServer.port }}
+              name: eureka
+          envFrom:
+            - configMapRef:
+                name: {{ include "ecommerce-platform.fullname" . }}-config
+          resources:
+            {{- toYaml .Values.platform.discoveryServer.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: {{ .Values.platform.discoveryServer.port }}
+            initialDelaySeconds: 40
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: {{ .Values.platform.discoveryServer.port }}
+            initialDelaySeconds: 25
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discovery-server
+  labels:
+    {{- include "ecommerce-platform.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.platform.discoveryServer.port }}
+      targetPort: {{ .Values.platform.discoveryServer.port }}
+      name: eureka
+  selector:
+    app: discovery-server

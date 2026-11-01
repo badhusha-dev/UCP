@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="stock-service" />
+        <module name="delivery-service" />
+        <module name="cart-service" />
+        <module name="loyalty-service" />
+        <module name="crm-service" />
+        <module name="product-service" />
+        <module name="qa-service" />
+        <module name="error-stack-service" />
+        <module name="user-service" />
+        <module name="procurement-service" />
+        <module name="notification-service" />
+        <module name="config-server" />
+        <module name="discovery-server" />
+        <module name="inventory-service" />
+        <module name="accounting-service" />
+        <module name="api-gateway" />
+        <module name="analytics-service" />
+        <module name="order-service" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="accounting-service" options="-parameters" />
+      <module name="analytics-service" options="-parameters" />
+      <module name="api-gateway" options="-parameters" />
+      <module name="cart-service" options="-parameters" />
+      <module name="config-server" options="-parameters" />
+      <module name="crm-service" options="-parameters" />
+      <module name="delivery-service" options="-parameters" />
+      <module name="discovery-server" options="-parameters" />
+      <module name="error-stack-service" options="-parameters" />
+      <module name="inventory-service" options="-parameters" />
+      <module name="loyalty-service" options="-parameters" />
+      <module name="notification-service" options="-parameters" />
+      <module name="order-service" options="-parameters" />
+      <module name="procurement-service" options="-parameters" />
+      <module name="product-service" options="-parameters" />
+      <module name="qa-service" options="-parameters" />
+      <module name="stock-service" options="-parameters" />
+      <module name="user-service" options="-parameters" />
+    </option>
+  </component>
+</project>

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  k6-flash-sale:
+    image: grafana/k6:latest
+    container_name: ecommerce-k6-runner
+    volumes:
+      - ./k6:/scripts
+      - ./reports:/reports
+    environment:
+      - GATEWAY_URL=http://api-gateway:8080
+    command: run /scripts/scenarios/flash-sale.js --summary-export=/reports/k6-flash-sale-summary.json
+    networks:
+      - ecommerce-network
+
+  locust-runner:
+    image: locustio/locust:latest
+    container_name: ecommerce-locust-runner
+    volumes:
+      - ./locust:/mnt/locust
+      - ./reports:/reports
+    environment:
+      - LOCUST_HOST=http://api-gateway:8080
+    ports:
+      - "8089:8089"
+    command: -f /mnt/locust/locustfile.py --headless -u 100 -r 10 --run-time 30s --html /reports/locust-report.html
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+    external: true
+    name: ecommerce-platform_ecommerce-network

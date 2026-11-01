@@ -1,0 +1,27 @@
+﻿{
+    "databases":  {
+                      "product_db":  {
+                                         "sizeKb":  3.95,
+                                         "file":  "product_db.sql",
+                                         "sha256":  "7DABAEFDE1E7079810C42F0835CD0C7EC7B6641905559EE3103CD8C11CD7BC36"
+                                     },
+                      "user_db":  {
+                                      "sizeKb":  4.16,
+                                      "file":  "user_db.sql",
+                                      "sha256":  "5378B3DAE5199C9FB0B40A1B3F680F70C47D90E680C6002CB1A7D447EEFD418C"
+                                  },
+                      "notification_db":  {
+                                              "sizeKb":  7.21,
+                                              "file":  "notification_db.sql",
+                                              "sha256":  "8FCC82E43A9DDF50BBB363368220A1C4553DF22EB3322B386266ED4350234B09"
+                                          },
+                      "order_db":  {
+                                       "sizeKb":  6.01,
+                                       "file":  "order_db.sql",
+                                       "sha256":  "36A76F2AA5B1A7E983F12292FBED9D2A3D19DC0202436196B34AFA14F4B85EF1"
+                                   }
+                  },
+    "timestamp":  "2026-10-20T15:57:26.8287263+05:30",
+    "user":  "ecommerce_admin",
+    "container":  "ecommerce-platform-postgres-1"
+}

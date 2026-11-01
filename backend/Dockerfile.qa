@@ -1,0 +1,14 @@
+FROM node:24-bookworm-slim AS node-runtime
+
+FROM maven:3.8.4-openjdk-17-slim
+COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
+RUN groupadd --system appgroup \
+    && useradd --system --gid appgroup --home-dir /var/lib/qa --create-home appuser \
+    && mkdir -p /var/lib/qa/workspaces/home/.m2/repository \
+    && chown -R appuser:appgroup /var/lib/qa
+WORKDIR /app
+COPY qa-service/target/qa-service-1.0.0-SNAPSHOT.jar /app/app.jar
+ENV HOME=/var/lib/qa/home
+USER appuser:appgroup
+EXPOSE 8094
+ENTRYPOINT ["java","-jar","/app/app.jar"]

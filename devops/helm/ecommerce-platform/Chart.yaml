@@ -1,0 +1,15 @@
+apiVersion: v2
+name: ecommerce-platform
+description: Enterprise E-Commerce Platform Umbrella Helm Chart for Microservices, Microfrontends, Kafka, and Observability
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - ecommerce
+  - microservices
+  - spring-boot
+  - kafka
+  - react
+maintainers:
+  - name: Architecture Team
+    email: architecture@ecommerce.internal

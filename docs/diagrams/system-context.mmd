@@ -1,0 +1,15 @@
+graph TD
+    Client["Client Web Browser / Mobile Device"]
+    Storefront["Storefront Shell App (:3000)"]
+    Gateway["Spring Cloud API Gateway (:8080)"]
+    Microservices["Domain Microservices Tier (Ports 8081-8084)"]
+    Storage["Relational DBs, Redis & Kafka Streaming"]
+    Telemetry["Zipkin, Prometheus, Grafana & ELK"]
+
+    Client -->|Loads UI Bundle| Storefront
+    Client -->|HTTPS REST APIs| Gateway
+    Storefront -->|Module Federation Remotes| Client
+    Gateway -->|JWT Authenticated Routing| Microservices
+    Microservices -->|Transactional Storage & Events| Storage
+    Microservices -.->|Traces, Metrics, Logs| Telemetry
+    Gateway -.->|Edge Metrics & Traces| Telemetry

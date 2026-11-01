@@ -1,0 +1,9 @@
+FROM eclipse-temurin:17-jre-alpine
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN mkdir -p /data/return-evidence && chown appuser:appgroup /data/return-evidence
+WORKDIR /app
+COPY order-service/target/*.jar /app/app.jar
+USER appuser:appgroup
+EXPOSE 8083
+ENTRYPOINT ["java","-jar","/app/app.jar"]
+

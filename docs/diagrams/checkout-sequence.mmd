@@ -1,0 +1,25 @@
+sequenceDiagram
+    autonumber
+    actor User as Authenticated Shopper
+    participant UI as Order MFE (:3002)
+    participant GW as API Gateway (:8080)
+    participant OS as Order Service (:8083)
+    participant PS as Product Service (:8082)
+    participant DB as PostgreSQL (order_db)
+    participant KF as Kafka Broker (:9092)
+
+    User->>UI: Click "Confirm & Pay"
+    UI->>GW: POST /api/orders/checkout (Authorization: Bearer JWT)
+    GW->>GW: Validate JWT Signature & Claims
+    GW->>OS: Forward with headers X-User-Id, X-User-Email
+    OS->>OS: Server-Side Price Recalculation
+    OS->>PS: POST /api/products/{id}/decrement-stock
+    PS->>PS: Execute Atomic UPDATE WHERE stock >= quantity
+    PS-->>OS: 200 OK (Stock Reserved)
+    OS->>DB: INSERT INTO orders (status='PLACED') & order_items
+    DB-->>OS: Order #79 Persisted
+    OS->>KF: kafkaTemplate.send("order-events", orderId, OrderEvent)
+    KF-->>OS: Producer Ack (acks=all)
+    OS-->>GW: 201 Created (OrderDTO)
+    GW-->>UI: 201 Created (Order Confirmation Details)
+    UI-->>User: Display Success Screen with Order #79

@@ -1,0 +1,18 @@
+# ==============================================================================
+# Remote S3 Backend & State Locking Configuration Example
+# ==============================================================================
+# To enable remote state storage with DynamoDB state locking:
+# 1. Ensure the S3 bucket and DynamoDB table exist with KMS encryption.
+# 2. Rename or copy this block into your environment's main.tf or backend.tf.
+# 3. Run: terraform init -migrate-state
+# ==============================================================================
+
+# terraform {
+#   backend "s3" {
+#     bucket         = "universal-commerce-terraform-state-prod"
+#     key            = "environments/prod/terraform.tfstate"
+#     region         = "us-east-1"
+#     encrypt        = true
+#     dynamodb_table = "universal-commerce-terraform-locks"
+#   }
+# }

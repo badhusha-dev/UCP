@@ -1,0 +1,14 @@
+graph TD
+    subgraph Backup_Process ["Automated Backup Flow (scripts/backup.sh)"]
+        B1["Identify Running PostgreSQL Container"] --> B2["Dump user_db, product_db, order_db, notification_db"]
+        B2 --> B3["Generate SHA-256 Checksums (.sha256)"]
+        B3 --> B4["Write manifest.json (Timestamp & Metadata)"]
+        B4 --> B5["Prune snapshots older than 7 days"]
+    end
+
+    subgraph Restore_Process ["Disaster Recovery Flow (scripts/restore.sh)"]
+        R1["Select Target Backup Directory"] --> R2["Verify SHA-256 Hashes"]
+        R2 --> R3["Terminate Active PostgreSQL Backend Sessions"]
+        R3 --> R4["Execute SQL Dumps into Target Databases"]
+        R4 --> R5["Trigger scripts/smoke-test.sh to Verify Cluster"]
+    end

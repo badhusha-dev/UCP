@@ -1,0 +1,123 @@
+name: Cloud Infrastructure CI/CD (Terraform)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'devops/terraform/**'
+      - '.github/workflows/terraform-infra.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'devops/terraform/**'
+      - '.github/workflows/terraform-infra.yml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  lint-and-validate:
+    name: Lint, Format & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.50.3
+
+      - name: Verify Formatting
+        run: terraform fmt -check -recursive devops/terraform
+
+      - name: Initialize TFLint
+        run: tflint --init
+        working-directory: devops/terraform
+
+      - name: Run TFLint
+        run: tflint --recursive
+        working-directory: devops/terraform
+
+      - name: Validate Dev Environment
+        working-directory: devops/terraform/environments/dev
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Validate Prod Environment
+        working-directory: devops/terraform/environments/prod
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+  plan-dev:
+    name: Terraform Plan (Dev)
+    needs: lint-and-validate
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Configure AWS Credentials
+        if: env.AWS_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Terraform Init
+        working-directory: devops/terraform/environments/dev
+        run: terraform init -backend=false
+
+      - name: Terraform Plan
+        working-directory: devops/terraform/environments/dev
+        run: terraform plan -input=false -var-file="terraform.tfvars"
+        continue-on-error: true
+
+  plan-prod:
+    name: Terraform Plan (Prod)
+    needs: lint-and-validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: prod
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Configure AWS Credentials
+        if: env.AWS_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Terraform Init
+        working-directory: devops/terraform/environments/prod
+        run: terraform init -backend=false
+
+      - name: Terraform Plan
+        working-directory: devops/terraform/environments/prod
+        run: terraform plan -input=false -var-file="terraform.tfvars"
+        continue-on-error: true

@@ -1,0 +1,123 @@
+# =============================================================================
+# Universal Commerce Platform - Prometheus Alerting Rules
+# Phase 18: Production Observability, Alerting & SLO Automation
+# =============================================================================
+
+groups:
+  - name: ecommerce.slo.rules
+    interval: 15s
+    rules:
+      # ── 1. Service Availability (SLO Target: 99.9%) ──────────────────────────
+      - alert: ServiceDown
+        expr: up{service=~"api-gateway|user-service|product-service|order-service|notification-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          tier: platform
+          team: sre-core
+        annotations:
+          summary: "Microservice {{ $labels.service }} is DOWN"
+          description: "Instance {{ $labels.instance }} of service {{ $labels.service }} has been unreachable for > 1m."
+          runbook_url: "https://ops.ecommerce.internal/runbooks/service-down"
+
+      # ── 2. High HTTP 5xx Error Rate (SLO Target: < 1.0%) ─────────────────────
+      - alert: HighHttp5xxRate
+        expr: (sum(rate(http_server_requests_seconds_count{status=~"5.."}[2m])) by (service) / sum(rate(http_server_requests_seconds_count[2m])) by (service)) * 100 > 2.0
+        for: 2m
+        labels:
+          severity: critical
+          tier: api
+          team: backend-ops
+        annotations:
+          summary: "High HTTP 5xx error rate on {{ $labels.service }}"
+          description: "Service {{ $labels.service }} is failing with {{ $value | printf \"%.2f\" }}% 5xx server errors over the last 2 minutes (threshold: > 2.0%)."
+          runbook_url: "https://ops.ecommerce.internal/runbooks/high-error-rate"
+
+      # ── 3. High P99 Latency (SLO Target: < 500ms) ────────────────────────────
+      - alert: HighP99Latency
+        expr: histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket[3m])) by (le, service)) > 0.500
+        for: 3m
+        labels:
+          severity: warning
+          tier: api
+          team: backend-ops
+        annotations:
+          summary: "High P99 API Latency on {{ $labels.service }}"
+          description: "P99 latency for {{ $labels.service }} exceeds 500ms (current: {{ $value | printf \"%.3f\" }}s)."
+          runbook_url: "https://ops.ecommerce.internal/runbooks/high-latency"
+
+      # ── 4. Circuit Breakers (Resilience4j) ────────────────────────────────────
+      - alert: Resilience4jCircuitBreakerOpen
+        expr: resilience4j_circuitbreaker_state{state="open"} > 0
+        for: 1m
+        labels:
+          severity: critical
+          tier: resilience
+          team: platform-reliability
+        annotations:
+          summary: "Circuit Breaker {{ $labels.name }} is OPEN"
+          description: "Resilience4j circuit breaker {{ $labels.name }} in {{ $labels.service }} entered OPEN state. Fallbacks active."
+          runbook_url: "https://ops.ecommerce.internal/runbooks/circuit-breaker-open"
+
+      - alert: Resilience4jCircuitBreakerHalfOpen
+        expr: resilience4j_circuitbreaker_state{state="half_open"} > 0
+        for: 2m
+        labels:
+          severity: warning
+          tier: resilience
+          team: platform-reliability
+        annotations:
+          summary: "Circuit Breaker {{ $labels.name }} is HALF-OPEN"
+          description: "Resilience4j circuit breaker {{ $labels.name }} in {{ $labels.service }} is testing downstream recovery."
+          runbook_url: "https://ops.ecommerce.internal/runbooks/circuit-breaker-half-open"
+
+      # ── 5. JVM Memory & GC Pressure ──────────────────────────────────────────
+      - alert: HighJvmHeapUsage
+        expr: (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100 > 85.0
+        for: 2m
+        labels:
+          severity: warning
+          tier: jvm
+          team: backend-ops
+        annotations:
+          summary: "High JVM Heap utilization on {{ $labels.service }}"
+          description: "JVM Heap usage on {{ $labels.service }} instance {{ $labels.instance }} is {{ $value | printf \"%.1f\" }}% (> 85%)."
+          runbook_url: "https://ops.ecommerce.internal/runbooks/jvm-heap"
+
+      - alert: HighSystemCpuUsage
+        expr: system_cpu_usage * 100 > 85.0
+        for: 3m
+        labels:
+          severity: warning
+          tier: system
+          team: sre-core
+        annotations:
+          summary: "High CPU utilization on {{ $labels.service }}"
+          description: "System CPU utilization on {{ $labels.service }} is {{ $value | printf \"%.1f\" }}% (> 85%)."
+          runbook_url: "https://ops.ecommerce.internal/runbooks/high-cpu"
+
+      # ── 6. HikariCP Connection Pool Saturation ────────────────────────────────
+      - alert: HikariPoolSaturation
+        expr: (hikaricp_connections_active / hikaricp_connections_max) * 100 > 90.0
+        for: 2m
+        labels:
+          severity: critical
+          tier: database
+          team: dba-sre
+        annotations:
+          summary: "HikariCP pool near saturation for {{ $labels.service }}"
+          description: "Active connections on {{ $labels.service }} pool {{ $labels.pool }} reached {{ $value | printf \"%.1f\" }}% of max capacity."
+          runbook_url: "https://ops.ecommerce.internal/runbooks/db-pool-saturation"
+
+      # ── 7. Synthetic Blackbox Edge Probes ────────────────────────────────────
+      - alert: SyntheticProbeFailure
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+          tier: synthetic
+          team: sre-core
+        annotations:
+          summary: "Synthetic Health Probe Failure for {{ $labels.instance }}"
+          description: "Synthetic endpoint probe failed for target {{ $labels.instance }}."
+          runbook_url: "https://ops.ecommerce.internal/runbooks/synthetic-probe-failure"

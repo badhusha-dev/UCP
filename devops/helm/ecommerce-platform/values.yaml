@@ -1,0 +1,205 @@
+# Default values for ecommerce-platform umbrella chart.
+global:
+  namespace: ecommerce
+  imageRegistry: ecommerce
+  imagePullPolicy: IfNotPresent
+
+config:
+  activeProfiles: "docker,kubernetes"
+  eurekaUrl: "http://discovery-server:8761/eureka/"
+  configServerUrl: "http://config-server:8888"
+  zipkinUrl: "http://zipkin:9411"
+  logstashHost: "logstash"
+  logstashPort: "5000"
+  kafkaBootstrapServers: "kafka:9092"
+  redisHost: "redis"
+  redisPort: "6379"
+  postgresHost: "postgres"
+  postgresPort: "5432"
+
+secrets:
+  postgresUser: "ecommerce_admin"
+  postgresPassword: "admin_password"
+  jwtSecret: "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+
+infrastructure:
+  postgres:
+    enabled: true
+    image: postgres:15-alpine
+    storageSize: 2Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  redis:
+    enabled: true
+    image: redis:7-alpine
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 256Mi
+  kafka:
+    enabled: true
+    zookeeperImage: confluentinc/cp-zookeeper:7.4.0
+    kafkaImage: confluentinc/cp-kafka:7.4.0
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 800m
+        memory: 1024Mi
+
+platform:
+  discoveryServer:
+    image: discovery-server:latest
+    replicaCount: 1
+    port: 8761
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  configServer:
+    image: config-server:latest
+    replicaCount: 1
+    port: 8888
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+services:
+  userService:
+    image: user-service:latest
+    replicaCount: 2
+    port: 8081
+    resources:
+      requests:
+        cpu: 200m
+        memory: 384Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 75
+  productService:
+    image: product-service:latest
+    replicaCount: 2
+    port: 8082
+    resources:
+      requests:
+        cpu: 200m
+        memory: 384Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+  orderService:
+    image: order-service:latest
+    replicaCount: 2
+    port: 8083
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 600m
+        memory: 1024Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+  notificationService:
+    image: notification-service:latest
+    replicaCount: 2
+    port: 8084
+    resources:
+      requests:
+        cpu: 200m
+        memory: 384Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+    autoscaling:
+      enabled: false
+
+gateway:
+  image: api-gateway:latest
+  replicaCount: 2
+  port: 8080
+  resources:
+    requests:
+      cpu: 250m
+      memory: 384Mi
+    limits:
+      cpu: 600m
+      memory: 768Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ecommerce.local
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+
+frontend:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 150m
+      memory: 128Mi
+
+monitoring:
+  enabled: true
+  alertmanager:
+    enabled: true
+    image:
+      repository: prom/alertmanager
+      tag: v0.27.0
+      pullPolicy: IfNotPresent
+    replicaCount: 1
+    port: 9093
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+  alerts:
+    enabled: true

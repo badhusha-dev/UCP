@@ -1,0 +1,44 @@
+graph TD
+    subgraph Host_Server ["Linux / Windows Production Server Host"]
+        subgraph Bridge_Net ["Docker Bridge Network (ecommerce-network)"]
+            subgraph Web_Tier ["Web Tier (Port 3000-3003)"]
+                S1["shell-app"]
+                S2["mfe-product"]
+                S3["mfe-order"]
+                S4["mfe-user"]
+            end
+
+            subgraph Ingress_Tier ["API Edge Ingress (Port 8080)"]
+                GW["api-gateway"]
+            end
+
+            subgraph Service_Tier ["Spring Boot Microservices Tier"]
+                U1["user-service"]
+                P1["product-service"]
+                O1["order-service"]
+                N1["notification-service"]
+                DS["discovery-server"]
+                CS["config-server"]
+            end
+
+            subgraph Storage_Tier ["Stateful Persistence Tier"]
+                PG["postgres:15-alpine"]
+                RD["redis:7-alpine"]
+                KF["kafka:7.4.0"]
+                ZK["zookeeper:7.4.0"]
+            end
+
+            subgraph Observability_Tier ["Observability Fabric"]
+                PM["prometheus"]
+                GF["grafana"]
+                ZK_UI["zipkin"]
+                KUI["kafka-ui"]
+                ELK["elasticsearch + logstash + kibana"]
+            end
+        end
+    end
+
+    Web_Tier --> Ingress_Tier
+    Ingress_Tier --> Service_Tier
+    Service_Tier --> Storage_Tier
+    Service_Tier -.-> Observability_Tier

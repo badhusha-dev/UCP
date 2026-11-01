@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: delivery-service
+  cloud:
+    config:
+      enabled: false
+server:
+  port: 8091
+jwt:
+  issuer: universal-commerce
+  audience: commerce-api
+order:
+  service:
+    url: ${ORDER_SERVICE_URL:http://localhost:8083}
+delivery:
+  otp:
+    # Required secret (16+ chars) for hashing delivery codes; proof verification refuses to run without it.
+    pepper: ${DELIVERY_OTP_PEPPER:}

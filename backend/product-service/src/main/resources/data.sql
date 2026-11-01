@@ -1,0 +1,1 @@
+-- Legacy data.sql migrated to Flyway migration V1__init_product_schema.sql

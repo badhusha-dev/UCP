@@ -1,0 +1,43 @@
+sequenceDiagram
+    actor Admin as Super Admin
+    actor Employee
+    participant Portal as Super Admin Portal :3013
+    participant InventoryApp as Inventory App :3004
+    participant Gateway as API Gateway :8080
+    participant Identity as User Service
+    participant IdentityDB as User Service PostgreSQL
+    participant Inventory as Inventory Service
+    participant InventoryDB as Inventory PostgreSQL
+
+    Admin->>Portal: Sign in with platform account
+    Portal->>Gateway: Create Client A and Client B; enable Inventory for A
+    Gateway->>Identity: Verify platform token and route control-plane request
+    Identity->>IdentityDB: Persist tenants and entitlement
+    Admin->>Portal: Add employee and grant Inventory to Client A
+    Portal->>Gateway: Create membership and app grant
+    Gateway->>Identity: Verify current Super Admin role
+    Identity->>IdentityDB: Persist membership, role, grant and audit event
+
+    Employee->>InventoryApp: Sign in with email, password and Client A slug
+    InventoryApp->>Gateway: POST /api/users/login/application
+    Gateway->>Identity: Authenticate and resolve tenant-scoped access
+    Identity->>IdentityDB: Check membership, entitlement, grant and role
+    Identity-->>InventoryApp: Short-lived signed Inventory token
+
+    Employee->>InventoryApp: List or adjust inventory
+    InventoryApp->>Gateway: Inventory API with signed token
+    Gateway->>Inventory: Route request; pass verified identity context
+    Inventory->>Identity: Internal signed-token and current-grant check
+    Identity->>IdentityDB: Recheck active user, membership, entitlement and grant
+    Identity-->>Inventory: 204 current grant
+    Inventory->>InventoryDB: Query/update rows scoped to token tenant ID
+    Inventory-->>Employee: Only Client A inventory
+
+    Admin->>Portal: Revoke employee Inventory grant
+    Portal->>Gateway: DELETE application grant
+    Gateway->>Identity: Verify current Super Admin role
+    Identity->>IdentityDB: Revoke grant and write audit event
+    Employee->>Inventory: Reuse prior token
+    Inventory->>Identity: Recheck current grant
+    Identity-->>Inventory: 403 grant revoked
+    Inventory-->>Employee: Access denied

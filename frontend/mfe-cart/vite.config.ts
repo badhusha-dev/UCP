@@ -1,0 +1,34 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import federation from '@originjs/vite-plugin-federation'
+
+export default defineConfig({
+  plugins: [
+    react(),
+    federation({
+      name: 'cart_mfe',
+      filename: 'remoteEntry.js',
+      exposes: {
+        './App': './src/App',
+        './CartPage': './src/pages/CartPage',
+        './CartDrawer': './src/components/CartDrawer',
+        './AbandonedCartsAdminPage': './src/pages/AbandonedCartsAdminPage'
+      },
+      shared: ['react', 'react-dom', 'react-redux', 'react-router-dom']
+    })
+  ],
+  server: {
+    port: 3005,
+    cors: true,
+  },
+  preview: {
+    port: 3005,
+    cors: true,
+  },
+  build: {
+    modulePreload: false,
+    target: 'esnext',
+    minify: false,
+    cssCodeSplit: false
+  }
+})

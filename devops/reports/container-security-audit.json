@@ -1,0 +1,87 @@
+{
+    "Timestamp":  "2026-10-21T23:53:52.6805402+05:30",
+    "TotalDockerfiles":  13,
+    "TotalChecks":  39,
+    "PassedChecks":  39,
+    "ComplianceScore":  100,
+    "Results":  [
+                    {
+                        "Dockerfile":  "backend\\Dockerfile.config",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "backend\\Dockerfile.discovery",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "backend\\Dockerfile.gateway",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "backend\\Dockerfile.notification",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "backend\\Dockerfile.order",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "backend\\Dockerfile.product",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "backend\\Dockerfile.user",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "backend\\user-service\\Dockerfile",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "frontend\\Dockerfile.order",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "frontend\\Dockerfile.product",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "frontend\\Dockerfile.shell",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "frontend\\Dockerfile.user",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    },
+                    {
+                        "Dockerfile":  "frontend\\mfe-product\\Dockerfile",
+                        "NonRootUser":  true,
+                        "MinimalBase":  true,
+                        "NoHardcodedSecrets":  true
+                    }
+                ]
+}

@@ -1,0 +1,381 @@
+<USER_REQUEST>
+# UCP Advanced Admin Dashboard and Business Analytics Enhancement
+
+## Role
+
+Act as a senior full-stack architect, Spring Boot engineer, React engineer, data analyst, database performance engineer, security engineer, and QA automation engineer.
+
+## Project context
+
+The project is the Universal Commerce Platform (UCP) v2.0.0, a documented single-store e-commerce platform.
+
+The documented technology stack includes:
+
+- Backend: Java 17/21, Spring Boot 3.2.4, Spring Cloud, Spring Data JPA, Flyway.
+- Frontend: React 18, TypeScript, Vite, Redux Toolkit, React Router, Material UI, Module Federation.
+- Databases: PostgreSQL 15, with separate databases or schemas used by services.
+- Supporting infrastructure: Redis, Kafka, Prometheus, Grafana, Zipkin, Elasticsearch, Logstash, and Kibana.
+- Main business services: API Gateway, User Service, Product Service, Order Service, and Notification Service.
+
+These are documented details, not proof that every service or feature is currently working. Verify the actual source code, dependency versions, runtime configuration, database schema, and API contracts before implementation.
+
+The platform documentation describes simulated checkout/payment behavior and simulated email delivery. Do not assume real payment processing, real email delivery, cost-of-goods data, historical analytics, or a working admin UI exists until verified.
+
+## Primary objective
+
+Upgrade the existing application into a professional single-store e-commerce platform with an accurate, secure, responsive, and actionable admin dashboard.
+
+Prioritize business analytics and admin productivity over cosmetic changes or unrelated features.
+
+Keep the solution affordable. Reuse the existing stack wherever practical. Avoid paid analytics platforms, paid AI APIs, and unnecessary new infrastructure.
+
+Do not rebuild the application from scratch.
+
+# Phase 0 — Repository integrity and baseline
+
+Before implementing anything:
+
+1. Inspect the actual repository tree, Git status, README files, source code, dependency manifests, service boundaries, database migrations, API endpoints, frontend routes, and tests.
+2. Verify that source files are located in valid directory structures. If archive extraction created filenames containing literal Windows backslashes instead of actual directories, diagnose this carefully and recover the correct structure without losing or overwriting files.
+3. Do not rename, move, or delete files blindly. Preserve the original archive and Git history where available.
+4. Identify existing admin pages, authorization rules, analytics endpoints, metrics, events, product cost fields, order status transitions, payment/refund fields, and customer identifiers.
+5. Run available baseline tests and builds before editing.
+6. Document current functionality, missing features, technical blockers, and architectural constraints.
+
+Create `docs/quality/ADMIN_ANALYTICS_BASELINE.md`.
+
+# Phase 1 — Define reliable business metrics
+
+Create a documented metric dictionary before coding.
+
+Implement only metrics that can be derived accurately from the available data. Explicitly distinguish verified metrics from estimates and unavailable metrics.
+
+## Executive dashboard
+
+Provide these KPI cards:
+
+- Gross merchandise value (GMV), if supported by the order and item data.
+- Net sales or net order value, with a documented definition.
+- Orders placed.
+- Completed and delivered orders.
+- Average order value (AOV).
+- Cancelled orders and cancellation rate.
+- Refund amount and refund rate, only if refunds are recorded.
+- New and returning customers.
+- Units sold.
+- Current low-stock product count.
+
+Requirements:
+
+- Support today, yesterday, last 7 days, last 30 days, month-to-date, previous month, custom date range, and all-time views when meaningful.
+- Support comparisons against an equivalent previous period.
+- Show percentage changes with clear handling for zero or missing baselines.
+- Include a trend indicator and concise explanatory labels.
+- Allow navigation from KPI cards to the relevant filtered detail page.
+- Display the timezone used for date boundaries.
+- Handle empty datasets, partial data, and failed API requests clearly.
+
+Do not label revenue as profit.
+
+Calculate gross profit only if reliable product cost data, discount allocation, refund treatment, and relevant accounting rules are available. Otherwise, document the missing inputs and omit the metric.
+
+## Metric definitions
+
+Define consistent rules for:
+
+- Gross order value versus net sales.
+- Order inclusion and exclusion by lifecycle status.
+- Cancellation treatment.
+- Refund and return treatment.
+- Tax and shipping treatment.
+- Discount allocation.
+- AOV denominator.
+- Unique customer counting.
+- Timezone and period boundaries.
+- Product quantities and units sold.
+
+Use one canonical definition across dashboard cards, charts, tables, exports, and APIs.
+
+Prevent double-counting when order events are retried or duplicated.
+
+# Phase 2 — Sales analytics
+
+Build:
+
+1. Daily sales and order-count time series.
+2. Sales trend with comparison to the previous period.
+3. Sales breakdown by order status.
+4. Top-selling products by units and sales value.
+5. Top-performing categories.
+6. Sales by order date and completion date, where relevant.
+7. Discount and refund analysis when reliable source data exists.
+8. Recent orders table with pagination, sorting, search, and status filters.
+9. Drill-down from charts and KPI cards to the underlying orders.
+10. CSV export for filtered reports.
+
+Every chart must use real backend data, not hardcoded sample values. If sample data is needed for local development, isolate it in an explicit development-only fixture or seed mechanism.
+
+# Phase 3 — Product and inventory analytics
+
+Implement:
+
+- Best-selling products.
+- Slow-moving products, using a configurable and documented period.
+- Products with zero stock.
+- Products below their configured reorder threshold.
+- Inventory quantities and changes over time, if inventory history exists.
+- Category-level performance.
+- Product revenue and units sold.
+- Stock valuation only when reliable cost data exists.
+- Inventory movement and adjustment audit history if the data model supports it.
+
+Use existing product and inventory APIs where appropriate.
+
+Do not fabricate inventory history or infer product costs from selling prices.
+
+If the platform lacks reorder thresholds, product cost, or inventory history, decide whether a safe additive schema change is appropriate. Document the migration and its business impact.
+
+# Phase 4 — Customer and conversion analytics
+
+First determine which behavioral events and customer records actually exist.
+
+Implement supported metrics such as:
+
+- New versus returning customers.
+- Repeat purchase rate.
+- Orders and sales by customer segment.
+- Highest-value customers, subject to authorization and privacy safeguards.
+- Average time between orders, when sufficient history exists.
+- Registration-to-purchase conversion, only if reliable registration and purchase records exist.
+- Product view → add to cart → checkout → order conversion, only if the corresponding events are captured.
+- Abandoned-cart reporting, only if cart state and inactivity rules can be measured reliably.
+
+If behavioral tracking is missing, add a minimal, privacy-conscious event collection design with consent and retention requirements considered where applicable.
+
+Use a defined event schema, deduplication strategy, and timestamps. Avoid collecting unnecessary personally identifiable information.
+
+Never claim that a funnel metric is available when its source events are not collected.
+
+# Phase 5 — Admin dashboard UX
+
+Use the existing React architecture, Material UI components, and established project conventions.
+
+Create a polished, responsive admin dashboard with:
+
+- A clear sidebar and page hierarchy.
+- Overview, Sales, Products, Inventory, Customers, Orders, and Reports sections.
+- Consistent KPI cards, charts, data tables, filters, and status indicators.
+- Date-range and comparison controls.
+- Search, sorting, pagination, and CSV export.
+- Skeleton loaders, empty states, error states, retry controls, and accessible labels.
+- Responsive layouts for desktop, tablet, and mobile.
+- Clear chart legends, units, currency formatting, and tooltip details.
+- Accessible color contrast and keyboard navigation.
+
+Reuse existing components and styles. Do not introduce a second UI framework without a compelling reason.
+
+If the application uses Module Federation, follow the existing shell/remotes design and verify that routes, authentication, shared dependencies, and remote loading continue to work.
+
+Do not build a disconnected standalone dashboard that bypasses the existing application.
+
+# Phase 6 — Backend analytics architecture
+
+Inspect the existing service boundaries before choosing where analytics logic belongs.
+
+Implement secure, versioned, documented endpoints using existing project conventions. Suggested logical endpoints include:
+
+- `GET /api/admin/analytics/overview`
+- `GET /api/admin/analytics/sales`
+- `GET /api/admin/analytics/orders`
+- `GET /api/admin/analytics/products`
+- `GET /api/admin/analytics/inventory`
+- `GET /api/admin/analytics/customers`
+- `GET /api/admin/analytics/reports`
+
+These are proposals, not mandatory URLs. Follow existing gateway routing and API conventions.
+
+Requirements:
+
+1. Enforce admin or explicitly authorized manager permissions on the server.
+2. Never trust a frontend-only role check.
+3. Validate date ranges, filters, sorting fields, pagination, and export requests.
+4. Apply sensible maximum date ranges and page sizes.
+5. Use database-side aggregation rather than loading entire tables into application memory.
+6. Review indexes and query plans for high-volume tables.
+7. Avoid N+1 queries and repeated expensive aggregate calculations.
+8. Keep analytics read operations isolated from order-write transactions where appropriate.
+9. Return consistent response schemas with currency, timezone, period, and metric definitions where needed.
+10. Add tests for authorization, invalid ranges, empty datasets, status exclusions, refunds, duplicate events, and boundary dates.
+
+Use read-only database access for analytics queries wherever practical.
+
+Do not query another service's private database directly if that would violate the established service ownership model. Prefer its API or an intentional, documented analytics projection.
+
+# Phase 7 — Performance and low-cost architecture
+
+Start with PostgreSQL aggregation queries, appropriate indexes, and the existing Redis infrastructure where caching is useful.
+
+Avoid adding a data warehouse, Kafka Connect, Debezium, Elasticsearch analytics pipelines, or a new analytics database until measured scale or requirements justify them.
+
+Caching requirements:
+
+- Cache only suitable read-heavy aggregates.
+- Use bounded TTLs and explicit invalidation or freshness rules.
+- Avoid exposing one user's authorized data to another.
+- Do not cache sensitive customer-level responses unnecessarily.
+- Display data freshness where relevant.
+- Ensure cache failures fall back safely to the source of truth.
+
+For slow queries, capture execution plans and optimize based on evidence.
+
+If analytics volume eventually justifies asynchronous projections, propose an incremental architecture that reuses existing Kafka events. Verify event completeness, ordering, idempotency, schema compatibility, replay, and reconciliation before depending on it.
+
+Do not create infrastructure merely because it appears enterprise-grade.
+
+# Phase 8 — Reports, exports, and alerts
+
+Implement:
+
+- CSV export for sales, orders, products, and inventory.
+- Server-side filtering that matches the displayed dashboard.
+- Safe CSV escaping to mitigate spreadsheet formula injection.
+- Export limits and authorization.
+- Daily and weekly summary report generation.
+- Low-stock alerts.
+- Configurable sales or order anomaly thresholds.
+- Optional scheduled email delivery through a provider interface.
+
+The current documentation describes email delivery as simulated. Keep the simulation available for development and tests; implement a real provider only with explicit configuration and sandbox verification.
+
+Use low-cost or free-tier services only when necessary. Document any recurring costs, quotas, data-retention concerns, and alternatives before enabling a paid service.
+
+# Phase 9 — AI business assistant, optional later phase
+
+Only begin after the analytics foundation is correct.
+
+Allow an authorized administrator to ask questions such as:
+
+- What were sales this month compared with last month?
+- Which products sold the most in the last 30 days?
+- Which products are below their stock thresholds?
+- Which categories have declining sales?
+- What changed in cancellation rates?
+
+The assistant must:
+
+- Use a fixed, permission-checked set of analytics tools or APIs.
+- Query verified data rather than inventing figures.
+- State the time period and metric definitions.
+- Explain when a metric cannot be calculated.
+- Avoid arbitrary model-generated SQL against production.
+- Avoid exposing credentials, private customer details, or internal service secrets.
+- Work without AI enabled, so core dashboard features remain available.
+- Use an optional local or low-cost provider behind a configurable interface.
+- Never send customer data to an external AI provider without appropriate approval and safeguards.
+
+Do not prioritize AI ahead of the accuracy and usefulness of the standard dashboard.
+
+# Phase 10 — Security and data integrity
+
+Review:
+
+- JWT validation and role-based authorization.
+- API Gateway security and route restrictions.
+- Direct service endpoint exposure.
+- Administrative actions and audit logging.
+- Injection, IDOR, XSS, and CSV injection risks.
+- Sensitive information in logs and exports.
+- Secrets in configuration and deployment files.
+- Database query safety and resource exhaustion.
+- Rate limiting for expensive analytics and export endpoints.
+
+Ensure analytics does not alter orders, stock, customer records, or payments.
+
+Use only synthetic or approved test data. Never trigger real payments or send messages to real customers during tests.
+
+# Phase 11 — Automated verification
+
+Add and run tests for:
+
+## Backend
+- Correct aggregation of orders and line items.
+- Inclusive/exclusive date boundaries and timezone behavior.
+- Correct status and refund treatment.
+- AOV and percentage-change calculations.
+- Zero-order and empty-result scenarios.
+- Pagination, filters, and invalid inputs.
+- Unauthorized and insufficiently privileged requests.
+- Query performance with realistic dataset sizes.
+- Cache freshness and invalidation.
+- CSV export correctness and formula-injection mitigation.
+
+## Frontend
+- Dashboard renders real API data.
+- Date and filter changes refresh all relevant widgets.
+- Charts and tables use the same filters and metric definitions.
+- Loading, empty, and error states work.
+- Exports respect active filters.
+- Unauthorized users cannot access protected admin routes.
+- Responsive and accessibility checks pass.
+
+## Regression
+- Registration and login.
+- Product catalog, search, and filtering.
+- Cart and checkout.
+- Inventory reservation.
+- Order lifecycle and history.
+- Kafka consumers and retry/DLQ behavior.
+- Existing frontend microfrontends.
+- Health checks, deployment configuration, and migrations.
+
+Run the available tests after each implementation batch. Clearly distinguish tests that passed, failed, were skipped, or could not run because of environmental blockers.
+
+# Phase 12 — Deliverables
+
+Create:
+
+- `docs/quality/ADMIN_ANALYTICS_BASELINE.md`
+- `docs/quality/ANALYTICS_METRIC_DICTIONARY.md`
+- `docs/quality/ADMIN_ANALYTICS_IMPLEMENTATION.md`
+- `docs/quality/ADMIN_ANALYTICS_TEST_MATRIX.md`
+- `docs/quality/ADMIN_ANALYTICS_PERFORMANCE.md`
+- `docs/quality/ADMIN_ANALYTICS_SECURITY_REVIEW.md`
+- `docs/quality/ADMIN_ANALYTICS_DEPLOYMENT.md`
+
+Update the README and API documentation with setup, permissions, endpoint examples, configuration, and known limitations.
+
+For every changed feature, report the files changed, migrations added, tests run, results, and remaining risks.
+
+# Implementation workflow
+
+Work incrementally in small, testable batches:
+
+1. Resolve repository layout and establish a trustworthy baseline.
+2. Inventory the existing admin UI, order data, product data, roles, and available APIs.
+3. Implement the metric dictionary and a minimal analytics API.
+4. Build the executive dashboard.
+5. Add sales and product analytics.
+6. Add inventory and customer analytics where supported by source data.
+7. Add reports, exports, and alerts.
+8. Optimize based on measured query performance.
+9. Consider the AI assistant only after the preceding features are tested.
+
+Before making a large change, explain the implementation approach briefly and then proceed. Do not stop after producing a roadmap.
+
+## Acceptance criteria
+
+- The dashboard uses real, authorized backend data.
+- Every displayed KPI has a documented definition and correct calculation.
+- Existing storefront, checkout, and microfrontend functionality remains intact.
+- Admin access is enforced on the server.
+- Database queries and exports are bounded and tested.
+- Builds, migrations, and relevant tests pass in the available environment.
+- No paid service is required for the core dashboard.
+- Any unavailable infrastructure or failed verification is explicitly reported.
+- No test result or production readiness claim is fabricated.
+
+Begin with Phase 0. Inspect the actual source tree and baseline first, then implement the highest-priority analytics feature end to end.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-23T12:10:53+05:30.
+</ADDITIONAL_METADATA>

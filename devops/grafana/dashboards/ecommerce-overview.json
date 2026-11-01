@@ -1,0 +1,240 @@
+{
+  "id": null,
+  "uid": "ecommerce-overview",
+  "title": "E-Commerce Platform Overview",
+  "tags": ["ecommerce", "microservices", "spring-boot"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(jvm_memory_used_bytes, service)",
+        "refresh": 2,
+        "multi": false,
+        "includeAll": true,
+        "allValue": ".*",
+        "label": "Service",
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Services Up",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "count(up{job=~\"user-service|product-service|order-service|notification-service|api-gateway\"} == 1)",
+        "legendFormat": "UP"
+      }],
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{"color":"red","value":0},{"color":"orange","value":3},{"color":"green","value":5}] } } }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total HTTP Requests (5m)",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "sum(increase(http_server_requests_seconds_count[5m]))",
+        "legendFormat": "Requests"
+      }],
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{"color":"blue","value":0}] } } }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Error Rate (5xx)",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "sum(increase(http_server_requests_seconds_count{status=~\"5..\"}[5m]))",
+        "legendFormat": "Errors"
+      }],
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{"color":"green","value":0},{"color":"orange","value":1},{"color":"red","value":10}] } } }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Circuit Breakers Open",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "count(resilience4j_circuitbreaker_state{state=\"open\"} == 1) or vector(0)",
+        "legendFormat": "Open CBs"
+      }],
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{"color":"green","value":0},{"color":"red","value":1}] } } }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Avg API Latency (p99)",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
+        "legendFormat": "p99"
+      }],
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [{"color":"green","value":0},{"color":"orange","value":1},{"color":"red","value":3}] } } }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "HTTP Request Rate by Service",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "sum(rate(http_server_requests_seconds_count[1m])) by (service)",
+        "legendFormat": "{{service}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } } },
+      "options": { "tooltip": { "mode": "multi" } }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "API Latency Percentiles (order-service)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{service=\"order-service\"}[5m])) by (le))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{service=\"order-service\"}[5m])) by (le))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{service=\"order-service\"}[5m])) by (le))", "legendFormat": "p99" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "JVM Heap Memory Used",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "sum(jvm_memory_used_bytes{area=\"heap\", service=~\"$service\"}) by (service)",
+        "legendFormat": "{{service}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "JVM Non-Heap Memory Used",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "sum(jvm_memory_used_bytes{area=\"nonheap\", service=~\"$service\"}) by (service)",
+        "legendFormat": "{{service}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "CPU Usage by Service",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "process_cpu_usage{service=~\"$service\"}",
+        "legendFormat": "{{service}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1, "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "JVM Threads",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "jvm_threads_live_threads{service=~\"$service\"}",
+        "legendFormat": "{{service}} live"
+      }],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "JVM Garbage Collection Pause Time",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "sum(rate(jvm_gc_pause_seconds_sum{service=~\"$service\"}[1m])) by (service)",
+        "legendFormat": "{{service}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "DB Connection Pool — Active Connections",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "hikaricp_connections_active{service=~\"$service\"}",
+        "legendFormat": "{{service}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "HTTP 4xx / 5xx Error Rate",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..\"}[1m])) by (service)", "legendFormat": "4xx {{service}}" },
+        { "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m])) by (service)", "legendFormat": "5xx {{service}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Circuit Breaker State (1=closed, 2=open, 3=half-open)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "resilience4j_circuitbreaker_state",
+        "legendFormat": "{{name}} {{state}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "Kafka Consumer Lag",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 44 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "kafka_consumer_fetch_manager_records_lag{service=\"notification-service\"}",
+        "legendFormat": "{{topic}} partition {{partition}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "Resilience4j Retry Calls",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 44 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(resilience4j_retry_calls_total{kind=\"successful_with_retry\"}[1m])) by (name)", "legendFormat": "success-retry {{name}}" },
+        { "expr": "sum(rate(resilience4j_retry_calls_total{kind=\"failed_with_retry\"}[1m])) by (name)", "legendFormat": "failed-retry {{name}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } } }
+    }
+  ]
+}

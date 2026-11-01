@@ -1,0 +1,162 @@
+﻿{
+    "Timestamp":  "2026-10-22T15:49:47.4911825+05:30",
+    "TotalProbed":  15,
+    "HealthyCount":  15,
+    "FailedCount":  0,
+    "AvailabilityPercent":  100,
+    "AvgLatencyMs":  316.1,
+    "SloTargetPercent":  99,
+    "SloCompliant":  true,
+    "Probes":  [
+                   {
+                       "Name":  "Discovery Server",
+                       "Category":  "Platform",
+                       "Url":  "http://localhost:8761/",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  141.6,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "Config Server",
+                       "Category":  "Platform",
+                       "Url":  "http://localhost:8888/actuator/health",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  553.5,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "API Gateway Core",
+                       "Category":  "Gateway",
+                       "Url":  "http://localhost:8080/actuator/health",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  107.1,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "API Gateway Route",
+                       "Category":  "Gateway Route",
+                       "Url":  "http://localhost:8080/product-service/v3/api-docs",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  1284.9,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "User Microservice",
+                       "Category":  "Domain Service",
+                       "Url":  "http://localhost:8081/actuator/health",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  118.8,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "Product Microservice",
+                       "Category":  "Domain Service",
+                       "Url":  "http://localhost:8082/actuator/health",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  2188.9,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "Order Microservice",
+                       "Category":  "Domain Service",
+                       "Url":  "http://localhost:8083/actuator/health",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  154.4,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "Notification Service",
+                       "Category":  "Domain Service",
+                       "Url":  "http://localhost:8084/actuator/health",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  105.1,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "Prometheus Server",
+                       "Category":  "Observability",
+                       "Url":  "http://localhost:9090/-/healthy",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  6.7,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "Alertmanager",
+                       "Category":  "Observability",
+                       "Url":  "http://localhost:9093/-/healthy",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  7.2,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "Grafana Dashboards",
+                       "Category":  "Observability",
+                       "Url":  "http://localhost:3030/api/health",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  11.5,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "Shell App MFE",
+                       "Category":  "Storefront MFE",
+                       "Url":  "http://localhost:3000/",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  11.4,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "Product MFE",
+                       "Category":  "Storefront MFE",
+                       "Url":  "http://localhost:3001/",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  9.7,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "Order MFE",
+                       "Category":  "Storefront MFE",
+                       "Url":  "http://localhost:3002/",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  32.3,
+                       "Error":  ""
+                   },
+                   {
+                       "Name":  "User MFE",
+                       "Category":  "Storefront MFE",
+                       "Url":  "http://localhost:3003/",
+                       "ExpectedStatus":  200,
+                       "ActualStatus":  200,
+                       "Healthy":  true,
+                       "LatencyMs":  8.4,
+                       "Error":  ""
+                   }
+               ]
+}

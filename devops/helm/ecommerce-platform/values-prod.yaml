@@ -1,0 +1,90 @@
+# Production environment overrides
+global:
+  namespace: ecommerce-prod
+  imagePullPolicy: IfNotPresent
+
+config:
+  activeProfiles: "prod,kubernetes"
+
+services:
+  userService:
+    replicaCount: 3
+    resources:
+      requests:
+        cpu: 300m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1024Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+  productService:
+    replicaCount: 3
+    resources:
+      requests:
+        cpu: 300m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1024Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 15
+      targetCPUUtilizationPercentage: 65
+  orderService:
+    replicaCount: 4
+    resources:
+      requests:
+        cpu: 500m
+        memory: 768Mi
+      limits:
+        cpu: 1500m
+        memory: 2048Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 4
+      maxReplicas: 20
+      targetCPUUtilizationPercentage: 65
+      targetMemoryUtilizationPercentage: 75
+  notificationService:
+    replicaCount: 3
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 800m
+        memory: 1024Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 75
+
+gateway:
+  replicaCount: 4
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1500m
+      memory: 1536Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 4
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 65
+
+frontend:
+  replicaCount: 3
+
+ingress:
+  host: shop.ecommerce.com
+  tls:
+    enabled: true
+    secretName: ecommerce-tls-cert

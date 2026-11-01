@@ -1,0 +1,44 @@
+graph LR
+    subgraph Frontend_Containers ["Frontend Tier (NGINX)"]
+        Shell["shell-app (:3000)"]
+        ProdMFE["mfe-product (:3001)"]
+        OrderMFE["mfe-order (:3002)"]
+        UserMFE["mfe-user (:3003)"]
+    end
+
+    subgraph Edge_Gateway ["Ingress Tier"]
+        GW["api-gateway (:8080)"]
+    end
+
+    subgraph Backend_Containers ["Microservices Tier (Java 17/21)"]
+        US["user-service (:8081)"]
+        PS["product-service (:8082)"]
+        OS["order-service (:8083)"]
+        NS["notification-service (:8084)"]
+        Eureka["discovery-server (:8761)"]
+        Config["config-server (:8888)"]
+    end
+
+    subgraph Data_Containers ["Persistence Tier"]
+        PG[("PostgreSQL 15 (:5432)")]
+        Redis[("Redis 7 (:6379)")]
+        Kafka[("Apache Kafka (:9092)")]
+        ZK["ZooKeeper (:2181)"]
+    end
+
+    Shell --> ProdMFE
+    Shell --> OrderMFE
+    Shell --> UserMFE
+    Shell --> GW
+    GW --> US
+    GW --> PS
+    GW --> OS
+    GW --> NS
+    US --> PG
+    PS --> PG
+    PS --> Redis
+    OS --> PG
+    OS --> Kafka
+    NS --> PG
+    Kafka --> NS
+    ZK --> Kafka

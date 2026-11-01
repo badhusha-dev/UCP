@@ -1,0 +1,56 @@
+# Development environment overrides
+global:
+  namespace: ecommerce-dev
+  imagePullPolicy: Always
+
+config:
+  activeProfiles: "dev,kubernetes"
+
+services:
+  userService:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+  productService:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+  orderService:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 150m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+  notificationService:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+
+gateway:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 150m
+      memory: 256Mi
+  autoscaling:
+    enabled: false
+
+frontend:
+  replicaCount: 1
+
+ingress:
+  host: dev.ecommerce.local
