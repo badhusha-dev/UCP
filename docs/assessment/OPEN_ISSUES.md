@@ -42,3 +42,4 @@ Recorded 2026-11-01. Each item names the record it comes from and who must act. 
 | 23 | Frontend tests are missing in 13 of 16 workspaces (TD-04). | REPOSITORY_BASELINE |
 | 24 | Node version differs between local (24.5) and the frontend image (20); no `engines` field (TD-08 area). | REPOSITORY_BASELINE |
 | 25 | Stale status documents say no Docker daemon was available. | TEST_RESULTS |
+| 26 | The cart is not shared between micro-frontends, so the UI checkout cannot be completed in the deployed build (B-40). Needs a choice of approach; recommended: share `@ecommerce/shared-library` as a federation singleton. | BUGS_AND_TECHNICAL_DEBT B-40 |

@@ -331,3 +331,10 @@ Next action
 - SF-01 on the server, through the gateway: checkout with `local-demo` produced order 2 in the storefront's store; `empty-shop` and an unknown slug were refused with 400 and created no order. This is the first run of order-service calling product-service's internal storefront lookup over the network.
 - Test data added to the local deployment only: two `storefronts` rows (inserted with `psql`), a few throwaway customers, and orders 1 and 2. No repository file changed.
 - Not clicked through: sign-in, cart and checkout pages. The checkout checks used the API with a throwaway customer.
+
+### UI click-through finds two cart defects (2026-11-01)
+
+- Signed in through the UI as a throwaway customer and added a product on `?storefront=local-demo`; both worked.
+- B-39 (fixed, `353478dc`): `GET /api/cart` returned 500 on PostgreSQL for a user without a cart, because `getCart` and `validateCart` were read-only transactions that insert a cart. The 8 existing H2 tests passed; a new contract test fails on the old code and passes now (cart-service 9 tests). cart-service was rebuilt and recreated on the local deployment; both endpoints return 200.
+- B-40 (open, decision needed): the cart is not shared between micro-frontends. Each bundle has its own Redux store because `@ecommerce/shared-library` is not in the federation `shared` list, and the cart is not persisted, so the cart page and the checkout page never see items added in the catalog. The UI checkout cannot be completed in the deployed build.
+- Not changed for B-40: it touches the federation config of every app and needs a rebuild of the frontend images. Recommended fix: share `@ecommerce/shared-library` as a singleton.

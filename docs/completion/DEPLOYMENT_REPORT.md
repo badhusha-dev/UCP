@@ -42,7 +42,7 @@ Compose has no `name:`, so the project is `ucp` (the directory name) and it crea
 
 ## Not verified
 
-- **Most of the UI in a browser.** Only the shell home page and the catalog were rendered (see the browser section below). Sign-in, the cart UI and checkout were not clicked through, and the order, user, cart and super-admin frontends were only fetched over HTTP.
+- **Most of the UI in a browser.** The shell home page, the catalog, sign-in and add-to-cart were checked (see the browser section below). The cart page is empty because of B-40, so the checkout page was not reached, and the order, user and super-admin frontends were only fetched over HTTP.
 - **Stock effect of checkout.** After the order, `stock_db.stock_reservation` had 0 rows. Whether the stock reservation happens through events, later, or not on this path was not investigated.
 - **Notifications and payments.** notification-service was not running, and no payment service exists.
 - **The nine undeployed services** and the nine other frontends.
@@ -76,9 +76,19 @@ Compose has no `name:`, so the project is `ucp` (the directory name) and it crea
 
 This is the first run of order-service calling product-service's internal storefront lookup with the service token over the real network.
 
-Not clicked through: sign-in, adding to the cart, and checkout in the UI. The checkout checks above used the gateway API with a throwaway customer, not the checkout page.
+**UI click-through (later the same day):**
 
-**Test data left in this local deployment** (all in the new `ucp_*` volumes; none in any repository file): two rows in `product_db.storefronts` (`local-demo`, `empty-shop`, inserted directly with `psql` because the admin API needs a tenant login), a few throwaway customer accounts (`smoke-*` and `sf-*` at `ucp-local.test`), and orders 1 and 2 in `order_db`.
+| Step | Result |
+|---|---|
+| Sign in on `/login` as a throwaway customer | Worked: redirected to `/`, header shows the user, a token is stored |
+| Add Wireless Headphones on `?storefront=local-demo` | Worked: the "Added ... to your cart!" toast appears |
+| Open the cart page | **Empty.** First cause: `GET /api/cart` returned 500 on Postgres (B-39). Fixed in `353478dc` and redeployed; both cart endpoints then returned 200. |
+| Open the cart page again | **Still empty.** Second cause: the cart is not shared between micro-frontends (B-40). The shell's cart badge stays empty after the add, and the cart page sends no `/api/cart/sync`. Open. |
+| Checkout page | Not reached, because of B-40 |
+
+The checkout checks in the table above used the gateway API with a throwaway customer, not the checkout page. The UI checkout cannot be completed in the deployed build until B-40 is resolved.
+
+**Test data left in this local deployment** (all in the new `ucp_*` volumes; none in any repository file): two rows in `product_db.storefronts` (`local-demo`, `empty-shop`, inserted directly with `psql` because the admin API needs a tenant login), a few throwaway customer accounts (`smoke-*`, `sf-*` and `ui-tester` at `ucp-local.test`; the UI tester's credentials are in the git-ignored env file), carts created for them, and orders 1 and 2 in `order_db`. cart-service was rebuilt and recreated once to deploy the B-39 fix.
 
 ## Stopping and removing
 
