@@ -303,6 +303,6 @@ Next action
 
 - `mvnw -B -ntp -fae test` from `backend/`, with the four Postgres URLs pointing at fresh databases (`ucp_scratch_full_accounting`, `_user`, `_delivery`, `_inventory`) in `ucp-test-pg`.
 - Result: 427 run, 426 passed, 1 failed, 0 errors, 0 skipped. Earlier full runs skipped 5 tests; none are skipped now.
-- Modules: 18 of 19 succeed. user-service fails on the single B-38 assertion in `TenantAccessPostgresIntegrationTest` (line 109). Its other tests passed.
-- The 427 count includes the outbox module's 10 tests and the Postgres-gated classes: accounting 5, delivery 6, inventory 29 across its two Postgres-enabled classes and the rest of that module.
-- Not a regression check of the H2 path alone: the same run also covers the H2 classes in every module.
+- Modules: 18 of 19 succeed. user-service fails on the single B-38 assertion in `TenantAccessPostgresIntegrationTest` (line 109). The assertions after line 109 did not run, so that test's remaining checks are still unverified. Every other test in the run passed.
+- Postgres-gated classes in this run: accounting 5 (pass), delivery 6 (pass), inventory 9 and 11 in its two Postgres-enabled classes (pass), user-service 1 (fail, B-38). The inventory module total is 29, including its H2 classes. The outbox module's 10 tests are included in the 427.
+- Because the Postgres classes are included, this run covers both the Postgres and H2 paths in each module.
