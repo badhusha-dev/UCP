@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { idempotencyKey } from './controlModel';
 
-export const ORDER_ADMIN_API = 'http://localhost:8080/api/orders/admin';
+export const ORDER_ADMIN_API = '/api/orders/admin';
 
 const client = axios.create({ baseURL: ORDER_ADMIN_API });
 client.interceptors.request.use((config) => {

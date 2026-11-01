@@ -25,7 +25,7 @@ const NotificationBell: React.FC = () => {
         if (!isAuthenticated || !user || !token) return;
         
         try {
-            const res = await fetch(`http://localhost:8080/api/notifications/user/${user.id}`, {
+            const res = await fetch(`/api/notifications/user/${user.id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -58,7 +58,7 @@ const NotificationBell: React.FC = () => {
 
     const markAsRead = async (id: number) => {
         try {
-            await fetch(`http://localhost:8080/api/notifications/${id}/read`, {
+            await fetch(`/api/notifications/${id}/read`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -71,7 +71,7 @@ const NotificationBell: React.FC = () => {
     const markAllAsRead = async () => {
         if (!user || !token) return;
         try {
-            await fetch(`http://localhost:8080/api/notifications/user/${user.id}/read-all`, {
+            await fetch(`/api/notifications/user/${user.id}/read-all`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -83,7 +83,7 @@ const NotificationBell: React.FC = () => {
 
     const deleteNotification = async (id: number) => {
         try {
-            await fetch(`http://localhost:8080/api/notifications/${id}`, {
+            await fetch(`/api/notifications/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

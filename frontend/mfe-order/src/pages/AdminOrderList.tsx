@@ -70,7 +70,7 @@ export default function AdminOrderList() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:8080/api/orders');
+      const res = await axios.get('/api/orders');
       setOrders(res.data);
     } catch (err) {
       console.warn('Failed to fetch from backend API, seeding demo order records for admin suite:', err);
@@ -99,7 +99,7 @@ export default function AdminOrderList() {
     );
 
     try {
-      await axios.put(`http://localhost:8080/api/orders/${orderId}/status`, { status: newStatus });
+      await axios.put(`/api/orders/${orderId}/status`, { status: newStatus });
     } catch (err) {
       console.warn('Backend update failed, keeping optimistic status:', err);
     }

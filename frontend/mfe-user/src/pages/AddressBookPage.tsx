@@ -11,7 +11,7 @@ import { AddRounded, DeleteOutlineRounded, EditRounded, HomeRounded } from '@mui
 type Address = { id: number; addressType: string; street: string; city: string; state?: string; postalCode: string; country: string; isDefault: boolean };
 type Form = Omit<Address, 'id'>;
 const blank: Form = { addressType: 'SHIPPING', street: '', city: '', state: '', postalCode: '', country: 'US', isDefault: false };
-const api = axios.create({ baseURL: 'http://localhost:8080/api' });
+const api = axios.create({ baseURL: '/api' });
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('jwt_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;

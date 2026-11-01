@@ -115,7 +115,7 @@ export default function OrderPage() {
         shippingAddress,
       };
 
-      const response = await axios.post('http://localhost:8080/api/orders/checkout', payload);
+      const response = await axios.post('/api/orders/checkout', payload);
       setSuccessOrder(response.data);
       dispatch(clearCart());
     } catch (err: any) {

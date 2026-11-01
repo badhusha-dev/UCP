@@ -51,8 +51,7 @@ type Coverage = {
   registeredTestCases: number; endpointsDiscovered: number; codeCoverageStatus: string; browserE2eStatus: string;
 };
 
-const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-const api = axios.create({ baseURL: `http://${host}:8080`, timeout: 15_000 });
+const api = axios.create({ timeout: 15_000 }); // Same origin: nginx (containers) and the Vite dev proxy forward /api to the gateway.
 api.interceptors.request.use((config) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('jwt_token') : null;
   if (token) config.headers.Authorization = `Bearer ${token}`;

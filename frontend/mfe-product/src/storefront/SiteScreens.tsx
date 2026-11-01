@@ -79,7 +79,7 @@ export function MediaLibrary({ storefront, can }: ScreenProps) {
       )}
       <Loading loading={media.loading} error={media.error} />
       {media.data && <DataTable rows={media.data} empty="No images uploaded yet." columns={[
-        { header: 'Preview', render: (r) => <img alt={r.altText} src={`http://localhost:8080/api/products/public/storefront/media/${r.publicId}`} style={{ maxWidth: 96, maxHeight: 48 }} /> },
+        { header: 'Preview', render: (r) => <img alt={r.altText} src={`/api/products/public/storefront/media/${r.publicId}`} style={{ maxWidth: 96, maxHeight: 48 }} /> },
         { header: 'File', render: (r) => r.fileName }, { header: 'Use', render: (r) => r.kind }, { header: 'Size', render: (r) => `${r.width}×${r.height} · ${Math.round(r.sizeBytes / 1024)} KB` }, { header: 'Alt text', render: (r) => r.altText },
         { header: '', render: (r) => can('storefront:media') && <Button size="small" color="error" onClick={() => { if (window.confirm(`Delete ${r.fileName}?`)) void run(() => sf.deleteMedia(r.id), 'Image deleted.', () => { void media.reload(); }); }}>Delete</Button> },
       ]} />}

@@ -73,9 +73,7 @@ function getBrowserInfo(): { browser: string; os: string } {
 
 export async function reportClientError(report: Partial<ClientErrorReport>): Promise<void> {
   try {
-    const apiBase = typeof window !== 'undefined'
-      ? `http://${window.location.hostname || 'localhost'}:8080`
-      : 'http://localhost:8080';
+    const apiBase = ''; // Same origin: nginx (containers) and the Vite dev proxy forward /api to the gateway.
 
     const { browser, os } = getBrowserInfo();
     const currentRoute = typeof window !== 'undefined' ? window.location.pathname : undefined;

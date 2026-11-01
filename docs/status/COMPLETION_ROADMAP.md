@@ -62,7 +62,7 @@ Required for a usable MVP.
 | 2.8 Istio policies for new services | F-12, B-24 | Mesh rollout | Each new service has an AuthorizationPolicy listing its callers. | Denied call from unlisted principal. |
 | 2.9 Alert secret injection | F-16, B-17 | 0.1 | Alertmanager reads webhook and routing keys from Secrets. | Alert delivered to a test channel. |
 | 2.10 DLQ for every consumer | F-11 | None | Each consumer has retry and dead-letter handling. | Poison message goes to DLQ. |
-| 2.11 Frontend API base from config | B-15 | None | No `localhost:8080` in source. | `git grep localhost:8080` returns only tests. |
+| 2.11 Frontend API base from config | B-15 | None | **Done 2026-11-01** with same-origin `/api` URLs. No `localhost:8080` in source. | `git grep localhost:8080` returns only tests. |
 | 2.12 Server-side promo validation | B-14 | Pricing quote API | Promo codes validated by the pricing API. | Invalid code refused; valid code priced. |
 | 2.13 Storefront UI sends tenant | B-25, K4 | 1.9 | Storefront flows include the tenant. | Browser test. |
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const STOREFRONT_API = 'http://localhost:8080/api/products/admin/storefront';
+export const STOREFRONT_API = '/api/products/admin/storefront';
 
 const client = axios.create({ baseURL: STOREFRONT_API });
 client.interceptors.request.use((config) => {

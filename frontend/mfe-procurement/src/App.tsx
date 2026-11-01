@@ -11,8 +11,7 @@ import {
 } from '@mui/icons-material';
 
 type Row = Record<string, any>;
-const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-const api = axios.create({ baseURL: `http://${host}:8080/api/procurement` });
+const api = axios.create({ baseURL: '/api/procurement' }); // Same origin: nginx (containers) and the Vite dev proxy forward /api to the gateway.
 api.interceptors.request.use((config) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('jwt_token') || localStorage.getItem('token') : null;
   if (token) config.headers.Authorization = `Bearer ${token}`;

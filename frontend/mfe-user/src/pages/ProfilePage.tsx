@@ -63,8 +63,8 @@ export default function ProfilePage() {
     if (user?.id) {
       try {
         const [profileRes, ordersRes] = await Promise.all([
-          axios.get(`http://localhost:8080/api/users/${user.id}`).catch(() => ({ data: { name: user.name, email: user.email, role: user.role, active: true } })),
-          axios.get(`http://localhost:8080/api/orders/user/${user.id}`).catch(() => ({ data: [] })),
+          axios.get(`/api/users/${user.id}`).catch(() => ({ data: { name: user.name, email: user.email, role: user.role, active: true } })),
+          axios.get(`/api/orders/user/${user.id}`).catch(() => ({ data: [] })),
         ]);
         setProfile(profileRes.data);
         setEditName(profileRes.data.name || user.name || '');
@@ -87,7 +87,7 @@ export default function ProfilePage() {
 
   const handleCancelOrder = async (orderId: number) => {
     try {
-      await axios.post(`http://localhost:8080/api/orders/${orderId}/cancel`);
+      await axios.post(`/api/orders/${orderId}/cancel`);
       setToastMessage('Order cancelled successfully!');
       fetchProfileAndOrders();
     } catch (err: any) {
@@ -98,7 +98,7 @@ export default function ProfilePage() {
   const handleSaveProfile = async () => {
     try {
       if (user?.id) {
-        await axios.put(`http://localhost:8080/api/users/${user.id}`, { name: editName });
+        await axios.put(`/api/users/${user.id}`, { name: editName });
       }
       setToastMessage('Profile updated successfully!');
       setIsEditing(false);

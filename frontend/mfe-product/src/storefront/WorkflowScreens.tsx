@@ -29,7 +29,7 @@ function PreviewPane({ preview }: { preview: Row }) {
             {s.props.heading && <Typography variant="h6">{s.props.heading}</Typography>}
             {s.props.subheading && <Typography variant="body2">{s.props.subheading}</Typography>}
             {(s.props.desktopImage || s.props.mobileImage) && <img alt={(device === 'mobile' && s.props.mobileImage ? s.props.mobileImage : s.props.desktopImage)?.alt ?? ''}
-              src={`http://localhost:8080${(device === 'mobile' && s.props.mobileImage ? s.props.mobileImage : s.props.desktopImage).url}`} style={{ maxWidth: '100%', maxHeight: 160 }} />}
+              src={`${(device === 'mobile' && s.props.mobileImage ? s.props.mobileImage : s.props.desktopImage).url}`} style={{ maxWidth: '100%', maxHeight: 160 }} />}
             {s.props.buttonLabel && <Button size="small" variant="contained" sx={{ mt: 1 }}>{s.props.buttonLabel}</Button>}
             {(s.props.products ?? []).length > 0 && (
               <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>

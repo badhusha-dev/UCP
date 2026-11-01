@@ -52,9 +52,8 @@ import {
 import axios from 'axios';
 
 axios.interceptors.request.use((config) => {
-  if (config.url && !config.url.startsWith('http')) {
-    const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost';
-    config.url = `http://${host}:8080${config.url.startsWith('/') ? '' : '/'}${config.url}`;
+  if (config.url && !config.url.startsWith('http') && !config.url.startsWith('/')) {
+    config.url = `/${config.url}`; // Same origin: nginx (containers) and the Vite dev proxy forward /api to the gateway.
   }
   const token = typeof window !== 'undefined' ? localStorage.getItem('jwt_token') : null;
   if (token && !config.headers.Authorization) {

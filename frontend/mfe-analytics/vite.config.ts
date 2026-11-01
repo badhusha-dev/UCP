@@ -13,6 +13,6 @@ export default defineConfig({
     }),
   ],
   build: { modulePreload: false, target: 'esnext', minify: false, cssCodeSplit: false },
-  server: { port: 3008, cors: true },
+  server: { port: 3008, cors: true, proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: true } } },
   preview: { port: 3008, cors: true },
 });

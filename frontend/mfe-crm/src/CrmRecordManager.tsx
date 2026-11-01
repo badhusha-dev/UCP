@@ -45,8 +45,7 @@ const resources: Resource[] = [
     ] },
 ];
 
-const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-const api = axios.create({ baseURL: `http://${host}:8080` });
+const api = axios.create(); // Same origin: nginx (containers) and the Vite dev proxy forward /api to the gateway.
 api.interceptors.request.use(config => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('jwt_token') : null;
   if (token) config.headers.Authorization = `Bearer ${token}`;

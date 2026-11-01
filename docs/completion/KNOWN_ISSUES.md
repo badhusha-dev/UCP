@@ -13,7 +13,7 @@
 | K9 | — | **Resolved 2026-11-01**: crm and procurement no longer publish host ports; they are reachable only through the gateway. | — |
 | K10 | Medium | Single shared HS256 secret across 7 services; generic validation ignores issuer/audience. | asymmetric keys |
 | K11 | Medium | delivery V1/V2 and inventory V4 migrations never applied to Postgres. | scratch-DB run on `localhost:15432` once Docker is up |
-| K12 | Low | mfe-order / mfe-product hard-code `http://localhost:8080`. | read API base from runtime config |
+| K12 | — | **Resolved 2026-11-01**: every frontend calls the gateway through same-origin `/api/...` URLs (nginx in containers, the Vite dev proxy locally); no `localhost:8080` remains in application source. | — |
 | K13 | — | **Resolved 2026-11-01**: manifests exist for all 18 backend services and are wired into `kubectl kustomize kubernetes`, with ingress rules in `kubernetes/security/service-call-policies.yml`. Not yet applied to a live cluster. | — |
 | K14 | Info | Authenticated live runs exist only for Accounting and read-only E-commerce Admin (seeded test tenants, `scripts/dev-seed`); other apps still have no tenant-grant login. | seed a test tenant + grant in a scratch DB |
 | K15 | Info | Behaviour change from this session: tenant-scoped tokens get 403 on legacy routes (e.g. `GET /api/orders`, `/api/users` directory, `/api/access/**`, accounting, CRM, QA). Platform tokens unaffected. | intended; revisit per service as it becomes tenant-aware |

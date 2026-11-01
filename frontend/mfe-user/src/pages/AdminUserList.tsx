@@ -93,7 +93,7 @@ export default function AdminUserList() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:8080/api/users');
+      const res = await axios.get('/api/users');
       setUsers(res.data);
     } catch (err) {
       console.error('Failed to fetch users', err);
@@ -105,8 +105,8 @@ export default function AdminUserList() {
   const fetchAccessConfiguration = async () => {
     try {
       const [roleResponse, permissionResponse] = await Promise.all([
-        axios.get('http://localhost:8080/api/access/roles'),
-        axios.get('http://localhost:8080/api/access/permissions'),
+        axios.get('/api/access/roles'),
+        axios.get('/api/access/permissions'),
       ]);
       setRoles(roleResponse.data);
       setPermissions(permissionResponse.data);
@@ -122,7 +122,7 @@ export default function AdminUserList() {
 
   const handleRoleChange = async (userId: number, newRole: string) => {
     try {
-      await axios.put(`http://localhost:8080/api/users/${userId}/role`, { role: newRole });
+      await axios.put(`/api/users/${userId}/role`, { role: newRole });
       setToastMessage(`Updated User #${userId} role to ${newRole}. They must sign in again for the new access token.`);
       setToastError(false);
       fetchUsers();
@@ -136,7 +136,7 @@ export default function AdminUserList() {
 
   const handleStatusChange = async (userId: number, newActive: boolean) => {
     try {
-      await axios.put(`http://localhost:8080/api/users/${userId}/status`, { active: newActive });
+      await axios.put(`/api/users/${userId}/status`, { active: newActive });
       setToastMessage(`User #${userId} status set to ${newActive ? 'Active' : 'Deactivated'}`);
       setToastError(false);
       fetchUsers();
@@ -160,9 +160,9 @@ export default function AdminUserList() {
     setRoleError('');
     try {
       if (editingRole) {
-        await axios.put(`http://localhost:8080/api/access/roles/${editingRole.key}/permissions`, { permissions: roleForm.permissions });
+        await axios.put(`/api/access/roles/${editingRole.key}/permissions`, { permissions: roleForm.permissions });
       } else {
-        await axios.post('http://localhost:8080/api/access/roles', roleForm);
+        await axios.post('/api/access/roles', roleForm);
       }
       setRoleDialogOpen(false);
       setToastMessage(editingRole ? `Updated ${editingRole.name} access. Assigned users must sign in again.` : `Created role ${roleForm.name}.`);
@@ -176,7 +176,7 @@ export default function AdminUserList() {
   const deleteRole = async (role: AccessRole) => {
     if (!window.confirm(`Delete ${role.name}? Users assigned to this role must be reassigned first.`)) return;
     try {
-      await axios.delete(`http://localhost:8080/api/access/roles/${role.key}`);
+      await axios.delete(`/api/access/roles/${role.key}`);
       setToastMessage(`Deleted ${role.name}.`); setToastError(false); fetchAccessConfiguration();
     } catch (err: any) {
       setToastMessage(err?.response?.data?.message || 'Unable to delete this role.'); setToastError(true);

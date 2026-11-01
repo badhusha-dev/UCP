@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { idempotencyKey } from './returnsModel';
 
-export const RETURNS_API = 'http://localhost:8080/api/orders/admin/rma';
+export const RETURNS_API = '/api/orders/admin/rma';
 
 const client = axios.create({ baseURL: RETURNS_API });
 client.interceptors.request.use((config) => {
