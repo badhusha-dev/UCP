@@ -15,7 +15,7 @@ be fully assessed without owner input.
 
 | ID | Severity | Component | Summary | Status | Fix commit |
 |---|---|---|---|---|---|
-| B-40 | High | Frontend / cart-service | Cart not shared between micro-frontends — UI checkout cannot be completed in the deployed build. The cart MFE writes to local Redux store only; the shell and checkout MFE have no view of it. Recommended fix: expose `@ecommerce/shared-library` as a Module Federation singleton. | **OPEN** | — |
+| B-40 | High | Frontend / cart-service | Cart not shared between micro-frontends — UI checkout cannot be completed in the deployed build. The cart MFE writes to local Redux store only; the shell and checkout MFE have no view of it. Recommended fix: expose `@ecommerce/shared-library` as a Module Federation singleton. | **FIXED** | see B-40 fix commit |
 | B-02 | High | Multiple services | Nine services are not tenant-scoped: stock, cart, loyalty, notification, qa, error-stack, legacy procurement, analytics, crm. Any authenticated user can read data from other tenants via these services. | **OPEN** | — |
 | B-21 | Medium | user-service | Logout does not revoke JWT tokens. A logged-out user can reuse a captured token until it expires. | **OPEN** | — |
 | B-05/K10 | Medium | user-service / config | JWT signing key stored in plaintext config. No Vault or Kubernetes Secret rotation. | **OPEN** | — |
@@ -73,7 +73,7 @@ be fully assessed without owner input.
 | Severity | Open | Fixed | Deferred | Needs review |
 |---|---|---|---|---|
 | Critical | 0 | 0 | 0 | 0 |
-| High | 2 | 0 | 0 | 0 |
+| High | 1 | 1 | 0 | 0 |
 | Medium | 5 | 3 | 0 | 1 |
 | Low / Tech debt | 7 | 0 | 0 | 2 |
-| **Total** | **14** | **3** | **0** | **3** |
+| **Total** | **13** | **4** | **0** | **3** |

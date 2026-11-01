@@ -21,7 +21,13 @@ export default defineConfig({
         crm_mfe: 'http://localhost:3011/assets/remoteEntry.js',
         procurement_mfe: 'http://localhost:3012/assets/remoteEntry.js',
       },
-      shared: ['react', 'react-dom', 'react-redux', 'react-router-dom']
+      shared: {
+        'react': { singleton: true, requiredVersion: false },
+        'react-dom': { singleton: true, requiredVersion: false },
+        'react-redux': { singleton: true, requiredVersion: false },
+        'react-router-dom': { singleton: true, requiredVersion: false },
+        '@ecommerce/shared-library': { singleton: true, requiredVersion: false, eager: true },
+      }
     })
   ],
   server: {

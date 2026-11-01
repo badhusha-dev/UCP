@@ -11,7 +11,13 @@ export default defineConfig({
       exposes: {
         './App': './src/App',
       },
-      shared: ['react', 'react-dom', 'react-redux', 'react-router-dom']
+      shared: {
+        'react': { singleton: true, requiredVersion: false },
+        'react-dom': { singleton: true, requiredVersion: false },
+        'react-redux': { singleton: true, requiredVersion: false },
+        'react-router-dom': { singleton: true, requiredVersion: false },
+        '@ecommerce/shared-library': { singleton: true, requiredVersion: false },
+      }
     })
   ],
   server: {
