@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const PRICING_API = 'http://localhost:8080/api/products/admin/pricing';
+export const PRICING_API = '/api/products/admin/pricing';
 
 const client = axios.create({ baseURL: PRICING_API });
 client.interceptors.request.use((config) => {

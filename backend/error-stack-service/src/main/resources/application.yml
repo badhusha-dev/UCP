@@ -7,7 +7,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:15432/error_stack_db
     username: ecommerce_admin
-    password: admin_password
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

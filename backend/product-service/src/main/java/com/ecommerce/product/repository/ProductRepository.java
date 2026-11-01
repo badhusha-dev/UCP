@@ -16,6 +16,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findAllByActiveTrue();
 
     java.util.Optional<Product> findByIdAndTenantId(Long id, java.util.UUID tenantId);
+    java.util.List<Product> findAllByTenantId(java.util.UUID tenantId);
 
     boolean existsByTenantIdAndSkuIgnoreCase(java.util.UUID tenantId, String sku);
 
@@ -37,6 +38,23 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            "(:maxPrice IS NULL OR p.price <= :maxPrice) AND " +
            "(:query IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<Product> searchProducts(
+            @Param("query") String query,
+            @Param("categoryId") Long categoryId,
+            @Param("minPrice") Double minPrice,
+            @Param("maxPrice") Double maxPrice,
+            Pageable pageable
+    );
+
+    List<Product> findAllByTenantIdAndActiveTrue(java.util.UUID tenantId);
+
+    /** Storefront catalog: the filters of {@link #searchProducts}, limited to the storefront's tenant. */
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.tenantId = :tenantId AND " +
+           "(:categoryId IS NULL OR p.category.id = :categoryId) AND " +
+           "(:minPrice IS NULL OR p.price >= :minPrice) AND " +
+           "(:maxPrice IS NULL OR p.price <= :maxPrice) AND " +
+           "(:query IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%')))")
+    Page<Product> searchTenantProducts(
+            @Param("tenantId") java.util.UUID tenantId,
             @Param("query") String query,
             @Param("categoryId") Long categoryId,
             @Param("minPrice") Double minPrice,

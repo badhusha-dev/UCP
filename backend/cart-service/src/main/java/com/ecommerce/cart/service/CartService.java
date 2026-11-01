@@ -7,12 +7,17 @@ import com.ecommerce.cart.model.CartItem;
 import com.ecommerce.cart.repository.AbandonedCartReminderRepository;
 import com.ecommerce.cart.repository.CartItemRepository;
 import com.ecommerce.cart.repository.CartRepository;
+import com.ecommerce.outbox.OutboxWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+
+import com.ecommerce.cart.security.CartPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -29,17 +34,33 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final AbandonedCartReminderRepository reminderRepository;
-    private final Optional<KafkaTemplate<String, Object>> kafkaTemplate;
+    private final OutboxWriter outbox;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
 
+    private UUID currentTenantId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CartPrincipal p) {
+            return p.tenantId();
+        }
+        return null;
+    }
+
     @Transactional
     public Cart getOrCreateCart(Long userId, String sessionToken) {
+        return getOrCreateCart(userId, sessionToken, currentTenantId());
+    }
+
+    @Transactional
+    public Cart getOrCreateCart(Long userId, String sessionToken, UUID tenantId) {
         if (userId != null) {
-            Optional<Cart> userCartOpt = cartRepository.findByUserIdAndStatus(userId, "ACTIVE");
+            Optional<Cart> userCartOpt = (tenantId != null)
+                    ? cartRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, "ACTIVE")
+                    : cartRepository.findByUserIdAndStatus(userId, "ACTIVE");
+
             if (userCartOpt.isPresent()) {
                 Cart userCart = userCartOpt.get();
-                // If there's an orphaned guest cart with this sessionToken, merge its items
+                // Merge an orphaned guest cart with this sessionToken if present
                 if (sessionToken != null && !sessionToken.isBlank()) {
                     cartRepository.findBySessionTokenAndStatus(sessionToken, "ACTIVE")
                             .ifPresent(guestCart -> {
@@ -57,6 +78,9 @@ public class CartService {
                 if (guestCartOpt.isPresent()) {
                     Cart claimedCart = guestCartOpt.get();
                     claimedCart.setUserId(userId);
+                    if (tenantId != null) {
+                        claimedCart.setTenantId(tenantId);
+                    }
                     return cartRepository.save(claimedCart);
                 }
             }
@@ -64,6 +88,7 @@ public class CartService {
             // Create fresh cart for authenticated user
             Cart newCart = Cart.builder()
                     .userId(userId)
+                    .tenantId(tenantId)
                     .sessionToken(sessionToken != null ? sessionToken : UUID.randomUUID().toString())
                     .status("ACTIVE")
                     .currency("USD")
@@ -72,7 +97,7 @@ public class CartService {
             return cartRepository.save(newCart);
         }
 
-        // Guest session
+        // Guest session — no tenantId
         String effectiveToken = (sessionToken != null && !sessionToken.isBlank())
                 ? sessionToken
                 : "guest_" + UUID.randomUUID();
@@ -117,7 +142,8 @@ public class CartService {
         cartRepository.save(targetUserCart);
     }
 
-    @Transactional(readOnly = true)
+    // Not read-only: a user or guest without a cart gets one created here, and PostgreSQL refuses that INSERT in a read-only transaction.
+    @Transactional
     public CartDto getCart(Long userId, String sessionToken) {
         Cart cart = getOrCreateCart(userId, sessionToken);
         return mapToDto(cart);
@@ -241,7 +267,8 @@ public class CartService {
         return mapToDto(saved);
     }
 
-    @Transactional(readOnly = true)
+    // Not read-only, for the same reason as getCart: it may create the cart.
+    @Transactional
     public CartValidationResultDto validateCart(Long userId, String sessionToken) {
         Cart cart = getOrCreateCart(userId, sessionToken);
 
@@ -384,22 +411,23 @@ public class CartService {
                 .build();
     }
 
+    /**
+     * Writes the event to the outbox in the caller's transaction (every caller is @Transactional), so it commits
+     * together with the cart change and is published to {@code cart.events} afterwards. The payload is unchanged.
+     */
     private void publishCartEvent(String eventType, Cart cart) {
-        kafkaTemplate.ifPresent(kt -> {
-            try {
-                Map<String, Object> event = new HashMap<>();
-                event.put("eventType", eventType);
-                event.put("cartId", cart.getId());
-                event.put("userId", cart.getUserId());
-                event.put("totalQuantity", cart.getTotalQuantity());
-                event.put("subtotal", cart.getSubtotal());
-                event.put("timestamp", OffsetDateTime.now().toString());
-                String jsonPayload = objectMapper.writeValueAsString(event);
-                kt.send("cart.events", String.valueOf(cart.getId()), jsonPayload);
-            } catch (Exception ex) {
-                log.warn("Failed to publish cart event {}: {}", eventType, ex.getMessage());
-            }
-        });
+        Map<String, Object> event = new HashMap<>();
+        event.put("eventType", eventType);
+        event.put("cartId", cart.getId());
+        event.put("userId", cart.getUserId());
+        event.put("totalQuantity", cart.getTotalQuantity());
+        event.put("subtotal", cart.getSubtotal());
+        event.put("timestamp", OffsetDateTime.now().toString());
+        try {
+            outbox.append("cart.events", String.valueOf(cart.getId()), eventType, objectMapper.writeValueAsString(event));
+        } catch (JsonProcessingException ex) {
+            log.warn("Could not serialise cart event {}: {}", eventType, ex.getMessage());
+        }
     }
 
     public CartDto mapToDto(Cart cart) {

@@ -4,6 +4,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +19,11 @@ import java.util.UUID;
 
 @Component
 public class JwtUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
+    private static final String DEV_TEST_KEY =
+            "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+
     @Value("${jwt.secret}")
     private String secret;
 
@@ -30,6 +38,23 @@ public class JwtUtil {
 
     @Value("${jwt.audience:commerce-api}")
     private String audience;
+
+    @PostConstruct
+    void validateSecret() {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                    "jwt.secret is not configured — set the JWT_SECRET environment variable");
+        }
+        if (secret.length() < 64) {
+            throw new IllegalStateException(
+                    "jwt.secret must be at least 32 bytes (64 hex chars); generate with: openssl rand -hex 32");
+        }
+        if (DEV_TEST_KEY.equalsIgnoreCase(secret)) {
+            log.warn("jwt.secret is the well-known development test key — " +
+                     "replace it with a unique secret before deploying to production " +
+                     "(openssl rand -hex 32)");
+        }
+    }
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
@@ -50,6 +75,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(email)
+                .setId(UUID.randomUUID().toString())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .setIssuer(issuer)

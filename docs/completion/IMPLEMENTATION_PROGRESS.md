@@ -208,3 +208,133 @@ Not done / limits
   stock in the shared legacy stock-service, which is not tenant-aware).
 - Customer accounts are still platform-wide (no per-tenant customers); stock deduction still uses the legacy stock-service;
   `order-events` still carry no tenant, so notification/accounting consumers treat storefront orders as legacy.
+
+## Phase 0 — Baseline and checkpoint (2026-11-01, branch `feature/ucp-completion-modernization`)
+
+Tasks completed
+- Recorded git state. `main` at `faeea04a`, 15 commits ahead of `origin/main` (not pushed), untracked `info/` (a separate git repo, left unchanged).
+- Created checkpoint branch `backup/pre-modernization-faeea04a` at `faeea04a` and worked on `feature/ucp-completion-modernization` from it. Both are local.
+- Checked the tooling: Java 17.0.11, Node 24.5.0, Docker Engine 29.9.2 and Compose v5.6.1, with the daemon running. Earlier notes said no daemon was available; that is out of date.
+- Found a scratch Postgres (`ucp-test-pg`, PostgreSQL 15.18 on `127.0.0.1:55432`) and built service images. Read-only: nothing was written to it.
+- Inventoried backend modules, Flyway migrations, frontend workspaces, Compose services, Kubernetes resources, CI workflows and test annotations. Verified that `backend/legacy/` is not referenced by the POM, Compose or CI.
+- Wrote [docs/assessment/REPOSITORY_BASELINE.md](../assessment/REPOSITORY_BASELINE.md).
+
+Files changed
+- `docs/assessment/REPOSITORY_BASELINE.md` (new)
+- `docs/completion/IMPLEMENTATION_PROGRESS.md` (this entry)
+
+Tests executed in this phase
+- None new. Results from this session's earlier work are listed in REPOSITORY_BASELINE.md (product-service 83/83, shared-library 48/48, mfe-product 17/17, mfe-order 20/20, 16 typechecks).
+- The full backend suite was not rerun. The last full run (385 executed, 380 passed, 0 failed, 5 skipped) predates the outbox adoption, order tenant and storefront commits.
+
+Known issues found
+- The Postgres-gated accounting test needs a database named `ucp_scratch_*`. The databases in the scratch container do not match that pattern.
+- `backend/legacy/` (43 files) is unreferenced by the build.
+- Duplicate `AdminAnalyticsDashboard.tsx` in `mfe-analytics` and `mfe-order`.
+- Local Node (24.5) differs from the frontend image (node 20).
+- Several status documents still say "no Docker daemon".
+
+Not done in this phase
+- GitHub push: no approval given. Pushing the feature branch would also push the 15 unpushed `main` commits, so this needs an explicit decision.
+- The plan's documentation tree, cleanup report, security assessment, test results record and root README rewrite.
+
+Remaining phases: 1 to 9, none started.
+
+Next action
+- Phase 1 needs a decision on which environment to use. Option A: run the Postgres-gated tests against a new `ucp_scratch_phase1` database in the existing scratch container (creating a database there and no other change). Option B: skip that and begin the cleanup candidates listed in REPOSITORY_BASELINE.md.
+
+## Phase 1 — Postgres-gated tests (2026-11-01, partly done)
+
+Scope
+- Ran the three Postgres-gated test classes against real PostgreSQL 15 for the first time. Each module got its own scratch database in the existing `ucp-test-pg` container: `ucp_scratch_phase1_accounting`, `ucp_scratch_phase1_user`, `ucp_scratch_phase1_delivery`. One database per module keeps each Flyway history separate. The first plan used one database; this was changed for that reason.
+- The database password was read from the container's environment at run time and passed through environment variables. It was not written to any file. No other container or database was touched.
+
+Results
+- accounting-service `AccountingTenantIsolationPostgresTest`: 5 run, 0 failures, `BUILD SUCCESS`. Flyway `accounting_flyway_schema_history` reached V19.
+- delivery-service `DeliveryTenantIsolationPostgresIntegrationTest`: 6 run, 0 failures, `BUILD SUCCESS`. Flyway V1 and V2 applied.
+- user-service `TenantAccessPostgresIntegrationTest`: 1 run, 1 failure. Line 109 expected 204 and got 400. Cause: B-38 (the INVENTORY grant rule rejects `WAREHOUSE_OPERATOR`). The assertions after line 109 did not run, so that test is unverified.
+- Flyway on Postgres: user-service V1 to V16 applied, none failed.
+
+Defects found
+- B-38 (new, open): `WAREHOUSE_OPERATOR` cannot be granted the INVENTORY application. V13 added cross-module permissions to the role, and the rule in `TenantAccessService.grantApplication` requires INVENTORY roles to hold only `inventory:` permissions. Needs a policy decision. Not changed here.
+- K11 partly resolved: accounting V1 to V19, user V1 to V16 and delivery V1 to V2 apply cleanly on Postgres. Inventory V4 is still not run.
+
+Files changed
+- `docs/status/BUGS_AND_TECHNICAL_DEBT.md` (B-38 added)
+- `docs/completion/KNOWN_ISSUES.md` (K11 updated)
+- `docs/completion/IMPLEMENTATION_PROGRESS.md` (this entry)
+- No code changed.
+
+Run notes
+- The first attempt passed a comma-separated `-Dtest` list through `mvnw.cmd`; `cmd` split it and no tests ran. No database changed in that attempt. Each module now runs one class per invocation.
+
+Not done
+- The inventory Postgres path.
+- The rest of the user-service Postgres test, which depends on the B-38 decision.
+- A full backend rerun.
+
+Scratch databases left in `ucp-test-pg`: the three above. They hold test data only and can be dropped on request.
+
+Next action
+- Owner decides the B-38 policy. After that, the user-service test can be rerun to completion, and inventory's Postgres path can be run next.
+
+### Inventory Postgres path (2026-11-01)
+
+- Ran the inventory-service suite with `UCP_TEST_INVENTORY_POSTGRES_URL` pointing at a new scratch database, `ucp_scratch_phase1_inventory`, in `ucp-test-pg`. This supersedes the "inventory Postgres path" item under "Not done" above.
+- Result: 29 run, 0 failures, `BUILD SUCCESS`. The Postgres-backed classes are `InventoryServiceIntegrationTest` (9) and `OpsIntegrationTest` (11). The other classes use H2 and were unaffected. The outbox module's 10 tests ran first, because `-am` was needed (see below).
+- Flyway: inventory V1 to V5 applied on Postgres, all successful.
+- First attempt failed before any test ran: `-pl inventory-service` alone could not resolve `ucp-outbox`, which is a sibling module. `-am` fixes that.
+- Not done in this section: the user-service test (still blocked on B-38) and the Postgres path for stock, cart, loyalty and order.
+
+### Other services' migrations on Postgres (2026-11-01)
+
+- Stock, cart, loyalty and order have no Postgres test path, so no test ran against them. Their migration files were applied in numeric version order with `psql -v ON_ERROR_STOP=1` into four scratch databases: `ucp_scratch_phase1_stock`, `_cart`, `_loyalty`, `_order`.
+- Result: stock V1 to V4 (4 files), cart V1 to V2 (2), loyalty V1 to V2 (2), order V1 and V4 to V11 (8). All applied without error.
+- Limits: this is not a Flyway run, so `flyway_schema_history` was not written, and no entity validation or test ran. It shows the SQL applies, not that the services start.
+- Observation: order-service has no V2 or V3 file; the sequence goes from V1 to V4. Flyway accepts gaps, so this is not an error, but the reason is not recorded in the repository.
+
+### B-38 correction (2026-11-01)
+
+- An earlier note in this log said that allowing module-scoped permissions would let `WAREHOUSE_OPERATOR` through. That was wrong: the role also holds procurement permissions (`goods-receipt:manage`, `purchase-order:view`), so a module-scoped rule still refuses it.
+- Checked against the scratch database: no seeded role passes the INVENTORY rule today. The rule requires `inventory:read` and only `inventory:` permissions. Roles that have `inventory:read` also have non-inventory permissions. V13 roles hold `inventory:view` instead. Details are in BUGS_AND_TECHNICAL_DEBT B-38.
+- The owner's decision is whether a warehouse operator's Inventory access includes goods receipt and purchase-order view. Yes: widen the rule to the V13 vocabulary. No: trim the role in a new migration.
+
+### Full backend run with Postgres enabled (2026-11-01)
+
+- `mvnw -B -ntp -fae test` from `backend/`, with the four Postgres URLs pointing at fresh databases (`ucp_scratch_full_accounting`, `_user`, `_delivery`, `_inventory`) in `ucp-test-pg`.
+- Result: 427 run, 426 passed, 1 failed, 0 errors, 0 skipped. Earlier full runs skipped 5 tests; none are skipped now.
+- Modules: 18 of 19 succeed. user-service fails on the single B-38 assertion in `TenantAccessPostgresIntegrationTest` (line 109). The assertions after line 109 did not run, so that test's remaining checks are still unverified. Every other test in the run passed.
+- Postgres-gated classes in this run: accounting 5 (pass), delivery 6 (pass), inventory 9 and 11 in its two Postgres-enabled classes (pass), user-service 1 (fail, B-38). The inventory module total is 29, including its H2 classes. The outbox module's 10 tests are included in the 427.
+- Because the Postgres classes are included, this run covers both the Postgres and H2 paths in each module.
+
+### B-38 fixed by owner decision (2026-11-01, commit `f216d479`)
+
+- Decision: a warehouse operator's Inventory access includes goods receipt (`goods-receipt:manage`) and purchase-order view (`purchase-order:view`).
+- Change: `TenantAccessService.grantApplication`. An INVENTORY grant needs `inventory:view` or `inventory:read`, and may carry only inventory and warehouse permissions plus those two procurement permissions. Other permissions are still refused.
+- Tests: new `TenantAccessPostgresIntegrationTest.inventoryGrantAcceptsWarehouseOperatorAndRefusesRolesOutsideTheRuleInPostgres` (ADMIN, INVENTORY_MANAGER, INVENTORY_ANALYST and PROCUREMENT_MANAGER refused; WAREHOUSE_OPERATOR accepted). The existing tenant-access test now runs to its end. user-service: 19 run, 0 failed, against `ucp_scratch_b38_user`.
+- Still refused: INVENTORY_MANAGER and INVENTORY_ANALYST, which hold `supplier:view` (OPEN_ISSUES 1b, owner decision).
+- Not verified: procurement-service accepting `goods-receipt:manage` from an INVENTORY-scoped token. The app token now carries the permission; whether procurement honours it through the gateway was not tested.
+
+## Local deployment (2026-11-01)
+
+- Deployed a lean core of the platform to this machine with Docker Compose (project `ucp`, fresh volumes): infrastructure (Postgres, Redis, Zookeeper, Kafka), config and discovery servers, the API gateway, six backend services and six frontends. 19 containers, about 3.9 GiB of Docker's 7.62 GiB.
+- Verified: health, Eureka registration, Flyway from scratch on six databases (0 failed), Super Admin login (and a wrong-password 401), frontends over HTTP, catalog through the nginx proxy, a customer checkout that produced order 1 and a published `ORDER_CREATED` event on the `order-events` topic, and data surviving a Postgres restart.
+- Not verified: any browser flow, the stock effect of checkout (no reservation row appeared), notifications, payments, the nine undeployed services and nine other frontends.
+- Problems found: parallel frontend builds time out on `npm install`; the gateway's dependency list pulls in 10 services; eleven hard-coded `container_name` entries; Zipkin errors when observability is not started.
+- Details, commands and the stop/remove procedure: [DEPLOYMENT_REPORT.md](DEPLOYMENT_REPORT.md) and [../deployment/LOCAL_DEPLOYMENT.md](../deployment/LOCAL_DEPLOYMENT.md).
+- No code changed for the deployment. Secrets for it live in `scripts/dev-seed/deploy-local.env`, which is git-ignored; your `.env` was not modified.
+
+### Browser check of the local deployment and SF-01 (2026-11-01)
+
+- Built-in browser: the shell home page and the product catalog render with no console errors. The product remote loads from port 3001 and calls only same-origin `/api` paths.
+- SF-01 in the browser: `?storefront=local-demo` shows the storefront banner and 3 items; `?storefront=empty-shop` (a tenant with no products) shows 0 items; `?storefront=nope` returns 404 from the lookup, clears the stored slug and falls back to the default catalog.
+- SF-01 on the server, through the gateway: checkout with `local-demo` produced order 2 in the storefront's store; `empty-shop` and an unknown slug were refused with 400 and created no order. This is the first run of order-service calling product-service's internal storefront lookup over the network.
+- Test data added to the local deployment only: two `storefronts` rows (inserted with `psql`), a few throwaway customers, and orders 1 and 2. No repository file changed.
+- Not clicked through: sign-in, cart and checkout pages. The checkout checks used the API with a throwaway customer.
+
+### UI click-through finds two cart defects (2026-11-01)
+
+- Signed in through the UI as a throwaway customer and added a product on `?storefront=local-demo`; both worked.
+- B-39 (fixed, `353478dc`): `GET /api/cart` returned 500 on PostgreSQL for a user without a cart, because `getCart` and `validateCart` were read-only transactions that insert a cart. The 8 existing H2 tests passed; a new contract test fails on the old code and passes now (cart-service 9 tests). cart-service was rebuilt and recreated on the local deployment; both endpoints return 200.
+- B-40 (open, decision needed): the cart is not shared between micro-frontends. Each bundle has its own Redux store because `@ecommerce/shared-library` is not in the federation `shared` list, and the cart is not persisted, so the cart page and the checkout page never see items added in the catalog. The UI checkout cannot be completed in the deployed build.
+- Not changed for B-40: it touches the federation config of every app and needs a rebuild of the frontend images. Recommended fix: share `@ecommerce/shared-library` as a singleton.

@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "carts")
@@ -25,6 +26,9 @@ public class Cart {
 
     @Column(name = "user_id")
     private Long userId;
+
+    @Column(name = "tenant_id")
+    private UUID tenantId;
 
     @Column(name = "session_token", length = 64)
     private String sessionToken;

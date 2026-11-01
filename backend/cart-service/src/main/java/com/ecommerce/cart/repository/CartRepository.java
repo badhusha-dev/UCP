@@ -9,11 +9,14 @@ import org.springframework.stereotype.Repository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Long> {
 
     Optional<Cart> findByUserIdAndStatus(Long userId, String status);
+
+    Optional<Cart> findByUserIdAndTenantIdAndStatus(Long userId, UUID tenantId, String status);
 
     Optional<Cart> findBySessionTokenAndStatus(String sessionToken, String status);
 

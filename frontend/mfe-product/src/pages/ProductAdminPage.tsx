@@ -25,7 +25,7 @@ type Form = {
   reorderThreshold: string; categoryId: string; imageUrl: string;
 };
 const emptyForm: Form = { name: '', description: '', price: '', costPrice: '', reorderThreshold: '10', categoryId: '', imageUrl: '' };
-const api = 'http://localhost:8080/api/products/admin';
+const api = '/api/products/admin';
 
 export default function ProductAdminPage() {
   const role = useSelector((state: RootState) => state.auth.user?.role);
@@ -44,7 +44,7 @@ export default function ProductAdminPage() {
     setFailure('');
     try {
       const [products, categoryList] = await Promise.all([
-        axios.get<Product[]>(api), axios.get<Category[]>('http://localhost:8080/api/products/categories'),
+        axios.get<Product[]>(api), axios.get<Category[]>('/api/products/categories'),
       ]);
       setRows(products.data);
       setCategories(categoryList.data);

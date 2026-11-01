@@ -91,6 +91,14 @@ jobs:
         working-directory: frontend
         run: npm run build --workspace=@ecommerce/shared-library
 
+      # Vite does not typecheck, so a missing import (such as the Button bug fixed on 2026-11-01) would still build.
+      - name: Typecheck
+        working-directory: frontend
+        run: |
+          config="${{ matrix.app }}/tsconfig.app.json"
+          [ -f "$config" ] || config="${{ matrix.app }}/tsconfig.json"
+          npx tsc --noEmit -p "$config"
+
       - name: Build Application & Module Federation Remotes
         working-directory: frontend
         run: npm run build --workspace=${{ matrix.app }}

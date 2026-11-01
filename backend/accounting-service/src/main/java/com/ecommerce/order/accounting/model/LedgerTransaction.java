@@ -24,21 +24,21 @@ public class LedgerTransaction {
     @Column(name = "tenant_id", nullable = false, updatable = false)
     private java.util.UUID tenantId;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id", nullable = false, updatable = false)
     private Long userId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "transaction_type", nullable = false, length = 50)
+    @Column(name = "transaction_type", nullable = false, length = 50, updatable = false)
     private TransactionType transactionType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "entry_type", nullable = false, length = 10)
+    @Column(name = "entry_type", nullable = false, length = 10, updatable = false)
     private EntryType entryType;
 
-    @Column(name = "amount", precision = 19, scale = 4, nullable = false)
+    @Column(name = "amount", precision = 19, scale = 4, nullable = false, updatable = false)
     private BigDecimal amount;
 
-    @Column(name = "currency", nullable = false, length = 3)
+    @Column(name = "currency", nullable = false, length = 3, updatable = false)
     @Builder.Default
     private String currency = "USD";
 
@@ -47,16 +47,16 @@ public class LedgerTransaction {
     @Builder.Default
     private TransactionStatus status = TransactionStatus.POSTED;
 
-    @Column(name = "description", nullable = false, length = 255)
+    @Column(name = "description", nullable = false, length = 255, updatable = false)
     private String description;
 
-    @Column(name = "reference_type", nullable = false, length = 50)
+    @Column(name = "reference_type", nullable = false, length = 50, updatable = false)
     private String referenceType;
 
-    @Column(name = "reference_id", nullable = false, length = 100)
+    @Column(name = "reference_id", nullable = false, length = 100, updatable = false)
     private String referenceId;
 
-    @Column(name = "idempotency_key", nullable = false, unique = true, length = 150)
+    @Column(name = "idempotency_key", nullable = false, unique = true, length = 150, updatable = false)
     private String idempotencyKey;
 
     @Column(name = "reversal_of_id")

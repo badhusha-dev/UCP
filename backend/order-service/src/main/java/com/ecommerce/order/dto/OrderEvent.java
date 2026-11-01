@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -15,6 +16,8 @@ public class OrderEvent {
     private BigDecimal totalAmount;
     private String reason;
     private String referenceId;
+    /** The order's tenant. OrderProducerService fills it from the order when a caller leaves it empty. */
+    private UUID tenantId;
 
     public OrderEvent(String eventType, Long orderId, Long userId, String status, BigDecimal totalAmount) {
         this(eventType, orderId, userId, status, totalAmount, null, null);

@@ -14,10 +14,17 @@ export default defineConfig({
         './CartDrawer': './src/components/CartDrawer',
         './AbandonedCartsAdminPage': './src/pages/AbandonedCartsAdminPage'
       },
-      shared: ['react', 'react-dom', 'react-redux', 'react-router-dom']
+      shared: {
+        'react': { singleton: true, requiredVersion: false },
+        'react-dom': { singleton: true, requiredVersion: false },
+        'react-redux': { singleton: true, requiredVersion: false },
+        'react-router-dom': { singleton: true, requiredVersion: false },
+        '@ecommerce/shared-library': { singleton: true, requiredVersion: false },
+      }
     })
   ],
   server: {
+    proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: true } },
     port: 3005,
     cors: true,
   },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Badge, IconButton, Menu, MenuItem, Typography, Box, CircularProgress, Divider } from '@mui/material';
+import { Badge, IconButton, Menu, MenuItem, Typography, Box, Divider } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useSelector } from 'react-redux';
@@ -18,7 +18,6 @@ const NotificationBell: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const [loading, setLoading] = useState(false);
 
     const open = Boolean(anchorEl);
     
@@ -26,7 +25,7 @@ const NotificationBell: React.FC = () => {
         if (!isAuthenticated || !user || !token) return;
         
         try {
-            const res = await fetch(`http://localhost:8080/api/notifications/user/${user.id}`, {
+            const res = await fetch(`/api/notifications/user/${user.id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -59,7 +58,7 @@ const NotificationBell: React.FC = () => {
 
     const markAsRead = async (id: number) => {
         try {
-            await fetch(`http://localhost:8080/api/notifications/${id}/read`, {
+            await fetch(`/api/notifications/${id}/read`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -72,7 +71,7 @@ const NotificationBell: React.FC = () => {
     const markAllAsRead = async () => {
         if (!user || !token) return;
         try {
-            await fetch(`http://localhost:8080/api/notifications/user/${user.id}/read-all`, {
+            await fetch(`/api/notifications/user/${user.id}/read-all`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -84,7 +83,7 @@ const NotificationBell: React.FC = () => {
 
     const deleteNotification = async (id: number) => {
         try {
-            await fetch(`http://localhost:8080/api/notifications/${id}`, {
+            await fetch(`/api/notifications/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

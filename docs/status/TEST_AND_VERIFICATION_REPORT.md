@@ -49,6 +49,8 @@ Backend static counts per module: user 13, product 77, order 99, accounting 27, 
 
 No TS2304, TS2769, TS2322, TS2339 or TS2551 errors remain in any workspace.
 
+**Update, later on 2026-11-01:** after the typecheck cleanup, `tsc --noEmit` reports 0 errors in all 16 workspaces. All 16 builds, the 4 lint scripts and the 76 node tests still pass. `ci-frontend.yml` now runs the typecheck before each app build.
+
 ## Lint (`npm run lint`)
 
 | Workspace | Result |
@@ -80,6 +82,20 @@ Output includes a logged `Failed to decode JWT token` line from a test that feed
 | **Module total** | **27** | **0** | **0** | **5** |
 
 Includes `testInternalAccountingRefusesWrongServiceToken`, added in this audit.
+
+### Targeted run after the account-lockout change
+
+`./mvnw -B -ntp -pl user-service test`
+
+| Class | Run | Failures | Errors | Skipped |
+|---|---|---|---|---|
+| AuthAndUserIntegrationTest | 10 (5 new lockout tests) | 0 | 0 | 0 |
+| LoyaltyAndAddressIntegrationTest | 5 | 0 | 0 | 0 |
+| TenantAccessPostgresIntegrationTest | 0 (Postgres-gated; no tests executed) | 0 | 0 | 0 |
+| UserRepositoryTest | 2 | 0 | 0 | 0 |
+| **Module total** | **17** | **0** | **0** | **0** |
+
+The new migration `V16__account_lockout.sql` was not executed. User-service tests use H2 with `ddl-auto: create-drop` and Flyway disabled.
 
 ### Full run
 
@@ -181,5 +197,6 @@ Not performed. No container was started. No browser session was run against a li
 | Frontend unit tests | 76 | 76 | 0 | 12 workspaces have no tests |
 | Backend targeted tests | 27 | 22 | 0 | 5 skipped (Postgres) |
 | Backend full run | 385 | 380 | 0 | 5 (Postgres-gated) |
+| Backend targeted (user-service, after lockout) | 17 | 17 | 0 | Postgres test class executes 0 tests |
 | Compose and Kubernetes validation | 4 | 4 | 0 | — |
 | Container, cluster and E2E tests | 0 | 0 | 0 | All not run (environment) |

@@ -20,6 +20,21 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | Add regression test for B-03 | `testInternalAccountingRefusesWrongServiceToken` passes |
 | Fix B-13: crm → loyalty port 8086 → 8087 | On disk in nested `backend/config-repo`; not committed |
 | Write the seven `docs/status/` documents | This folder |
+| Account lockout (catalog PLT-01, status F-03) | user-service V16, `LoginAttemptService`, both login endpoints; user-service suite 17 pass, 0 fail |
+| Advanced feature catalog and expansion roadmap | `docs/product/ADVANCED_FEATURE_CATALOG.md`, `docs/product/FEATURE_EXPANSION_ROADMAP.md` |
+| Lockout user and operator guide | `docs/security/ACCOUNT_LOCKOUT.md` |
+| Remove committed credentials from tracked files (B-06 to B-09, B-35) | `git grep` finds none outside docs and tests; compose resolves with `.env` and refuses without; kustomize builds; error-stack 6/6 tests pass. Rotation of the old values is still the owner's task. |
+| Tenant-scope inventory analytics and require `analytics:read` (B-04) | product-service: 79 tests, 0 failures (2 new) |
+| Kubernetes secrets template (B-18) | Fresh-clone simulation: build fails without `02-secrets.yml`, passes with the template copied (34 Deployments) |
+| Gateway sign-in rate limit (B-20, PLT-01 second half) | api-gateway: 41 tests, 0 failures (3 new in `LoginRateLimitTest`) |
+| Shared transactional outbox, adopted by cart and loyalty (PLT-05 part, B-16, K5) | `outbox` 7, `cart-service` 8, `loyalty-service` 9 tests, all passing |
+| Same-origin `/api` URLs in every frontend; dev proxies added to 11 MFEs (B-15, K12, S10) | 0 type errors; 16 builds, 4 lint and 76 node tests pass. Not exercised in a browser. |
+| Frontend typecheck clean in all 16 workspaces, plus a CI typecheck gate (TD-01 to TD-03) | 0 type errors; 16 builds, 4 lint and 76 node tests pass |
+| Tenant on order events and their outbox rows (B-27) | `order-service` 101 (2 producer tests), `notification-service` 11 (2 compatibility tests), all passing |
+| Product specification v1.0 recorded and measured against the repository | `docs/product/PRODUCT_REQUIREMENTS.md` (verbatim), `APPLICATION_CATALOG.md`, `RELEASE_STRATEGY.md`, `docs/architecture/SERVICE_BOUNDARIES.md`, `docs/README.md`. Evidence from migrations, entities and controller paths; documentation only. |
+| Storefront tenant resolution in the catalog and checkout (SF-01, B-25, K4, roadmap 1.9 and 2.13) | product-service: `StorefrontCatalogTest` 4 tests and the full suite 83 tests, 0 failures. order-service `StorefrontCheckoutTest` (existing). shared-library 48 tests (9 new); mfe-product 17, mfe-order 20; 16 typechecks, builds and lint clean. Not exercised in a browser. |
+| Analytics dashboards show load failures (B-37) | `mfe-analytics` and `mfe-order`: 0 type errors, both builds pass, mfe-order lint and 20 tests pass. Not exercised in a browser. |
+| Outbox adopted by order, inventory and stock; RAW payload mode (PLT-05, B-34) | `outbox` 10, `order-service` 100, `inventory-service` 29, `stock-service` 11 tests, all passing; cart 8 and loyalty 9 re-run |
 
 ## In progress
 
@@ -30,7 +45,7 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 
 | Item | Roadmap | Notes |
 |---|---|---|
-| Remove literal credentials from tracked files | 0.1 | Needs the owner to confirm and rotate values first (see Blocked). |
+| ~~Remove literal credentials from tracked files~~ | 0.1 | Done 2026-11-01. Rotation remains (see Blocked). |
 | Analytics exact role and tenant scope | 0.3 | Source change; test first. |
 | Tenant scoping, one slice per service (nine services) | 0.4 | Each slice is a new Flyway migration. |
 | Account lockout and gateway rate limiting | 0.5 | — |
@@ -52,6 +67,7 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | 2.4 Quality Center | Tenant-or-platform not decided | Decide. |
 | TD-07 config repository | Nested repo has no remote and 27 uncommitted entries | Give it a remote or move it into the parent. |
 | TD-08 frontend lockfile | Lockfile excluded from Docker context | Decide on a Linux-compatible lockfile. |
+| crm tenant slice (F-02) | Its SQL is Postgres-only and untested; Testcontainers needs Docker, and no Docker daemon is available | Start Docker on the build machine, or provide a scratch Postgres. |
 
 ## Next recommended task
 
@@ -69,3 +85,4 @@ Continuously updated. Phase and item IDs refer to [COMPLETION_ROADMAP.md](COMPLE
 | 2026-11-01 | `docker compose config` (temporary token) | Valid, 46 services |
 | 2026-11-01 | `kubectl kustomize kubernetes` | Builds: 34 Deployments, 18 NetworkPolicies |
 | 2026-11-01 | Full backend run | `BUILD SUCCESS`; 19 of 19 modules; 385 executed, 380 passed, 0 failed, 5 skipped |
+| 2026-11-01 | `./mvnw -B -ntp -pl user-service test` after the lockout change | 17 executed, 0 failed (5 new lockout tests); V16 not run on Postgres |

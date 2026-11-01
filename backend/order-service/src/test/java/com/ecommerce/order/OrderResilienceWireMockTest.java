@@ -55,7 +55,6 @@ public class OrderResilienceWireMockTest {
     @Test
     @DisplayName("Should create PLACED order when Product Service inventory deduction succeeds")
     void testOrderPlacementHealthyProductService() {
-        when(orderProducerService.publishOrderEvent(any())).thenReturn(CompletableFuture.completedFuture(null));
 
         wireMockServer.stubFor(post(urlEqualTo("/api/stock/adjustments"))
                 .withRequestBody(matchingJsonPath("$.productId", equalTo("10")))
@@ -82,7 +81,6 @@ public class OrderResilienceWireMockTest {
     @Test
     @DisplayName("Should create PENDING_INVENTORY order when Product Service fails (Circuit Breaker Fallback)")
     void testOrderPlacementDegradedProductService() {
-        when(orderProducerService.publishOrderEvent(any())).thenReturn(CompletableFuture.completedFuture(null));
 
         wireMockServer.stubFor(post(urlEqualTo("/api/stock/adjustments"))
                 .withRequestBody(matchingJsonPath("$.productId", equalTo("20")))

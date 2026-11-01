@@ -2,6 +2,20 @@
 
 Baseline: `origin/main` at `c57de2be` before this session, and `881fe882` after the push on 2026-11-01. Earlier history (`ffee4dae`, `d76747e5`) was preserved; the secret scrub rewrote only the two unpushed commits (see TD-11 in [BUGS_AND_TECHNICAL_DEBT.md](BUGS_AND_TECHNICAL_DEBT.md)).
 
+## Latest change: account lockout and feature planning
+
+| File | Change | Verification |
+|---|---|---|
+| `backend/user-service/src/main/resources/db/migration/V16__account_lockout.sql` | New: `failed_login_attempts`, `locked_until` on `users` (additive) | Not run on Postgres (tests use H2 with Flyway off) |
+| `backend/user-service/.../model/User.java` | Two lockout fields, hidden from JSON | Suite passes |
+| `backend/user-service/.../repository/UserRepository.java` | Three single-statement lockout updates | Suite passes |
+| `backend/user-service/.../service/LoginAttemptService.java` | New: lock after N failures for a period; reset on success | Suite passes |
+| `backend/user-service/.../controller/AuthController.java` | Both login endpoints check the lock first, record failures and successes, and return 423 while locked; OpenAPI lists 401 and 423 | Suite passes |
+| `backend/user-service/src/test/.../AuthAndUserIntegrationTest.java` | Five lockout tests | 17 executed, 0 failed |
+| `docs/product/ADVANCED_FEATURE_CATALOG.md`, `docs/product/FEATURE_EXPANSION_ROADMAP.md`, `docs/security/ACCOUNT_LOCKOUT.md` | New documents | — |
+
+API behaviour change: a locked account receives `423 Locked` from `/api/users/login` and `/api/users/login/application`. Responses for unlocked accounts are unchanged.
+
 ## Commits on `main` since the baseline
 
 | Commit | Files | Summary | Verification |
@@ -53,6 +67,9 @@ None. No Flyway migration was added, edited or removed in this session.
 - Accounting: unknown ledger or transaction ID returns 404 (was 500). Rejected input returns 400 with `{"error": ...}` (was 500).
 - Services that read `SERVICE_TO_SERVICE_TOKEN` now fail at startup when it is unset (was: accept the public default). Compose and Kubernetes already required it.
 - crm-service and procurement-service are no longer reachable from the host on 8092 and 8093. Gateway access is unchanged.
+- Storefront shoppers get the storefront's own catalog and check out into its tenant (SF-01, B-25). The storefront is found from the address (a verified custom domain or `<slug>.<base-domain>`), else `?storefront=<slug>`, else the one remembered for the session. `GET /api/products` takes `storefront=<slug>` and returns only that tenant's active products; an unknown or inactive slug gets 404. `GET /api/products/public/storefront/resolve` also accepts the platform address `<slug>.<base-domain>`. Checkout receives the slug from `mfe-order`. The cart is still shared (K2).
+- Warehouse operators can receive an Inventory application grant that includes goods receipt and PO view (owner decision, B-38). INVENTORY_MANAGER and INVENTORY_ANALYST are still refused (OPEN_ISSUES 1b).
+- Admin analytics dashboards (`mfe-analytics`, and `/analytics` in `mfe-order`) now name each section that failed to load, offer a Retry, and clear that section rather than keep figures from the previous time range (B-37).
 - Frontend containers are built from source. `dist/` is no longer committed, so a checkout without a local build cannot serve the MFEs from bind mounts.
 
 ## Configuration changes

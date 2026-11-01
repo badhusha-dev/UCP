@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "dev": "vite --port 3011", "build": "tsc -b && vite build", "preview": "vite preview --port 3011" },
+  "scripts": {
+    "dev": "vite --port 3011",
+    "build": "tsc -b && vite build",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "preview": "vite preview --port 3011"
+  },
   "dependencies": {
     "@emotion/react": "^11.13.0",
     "@emotion/styled": "^11.13.0",
@@ -21,5 +26,8 @@
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "~6.0.2",
     "vite": "^8.1.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

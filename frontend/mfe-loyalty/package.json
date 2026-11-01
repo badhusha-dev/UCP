@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --port 3006",
     "build": "tsc && vite build",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
     "preview": "vite preview --port 3006"
   },
   "dependencies": {
@@ -25,5 +26,8 @@
     "typescript": "^5.3.2",
     "vite": "^8.1.0",
     "@originjs/vite-plugin-federation": "^1.4.1"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

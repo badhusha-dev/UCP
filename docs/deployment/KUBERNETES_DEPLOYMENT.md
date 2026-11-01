@@ -37,8 +37,25 @@ helm template ucp devops/helm/ecommerce-platform/ -f devops/helm/ecommerce-platf
 helm upgrade --install ucp devops/helm/ecommerce-platform/ \
     --namespace ecommerce \
     --create-namespace \
-    -f devops/helm/ecommerce-platform/values-prod.yaml
+    -f devops/helm/ecommerce-platform/values-prod.yaml \
+    --set secrets.postgresPassword="$POSTGRES_PASSWORD" \
+    --set secrets.jwtSecret="$JWT_SECRET"
 ```
+
+The chart's `values.yaml` holds only `REPLACE_ME` placeholders for secrets. Always pass real values with `--set` or a private values file that is not committed. The placeholder JWT secret is too short to be an HS256 key, so services stop at startup if you forget it.
+
+### Kustomize (plain manifests)
+
+`kubernetes/kustomization.yml` reads `kubernetes/base/02-secrets.yml`. That file is gitignored, so create it from the committed template first:
+
+```bash
+cp kubernetes/base/02-secrets.example.yml kubernetes/base/02-secrets.yml
+# replace every REPLACE_ME, for example with values from: openssl rand -hex 32
+kubectl kustomize kubernetes > /dev/null   # check that the manifests build
+kubectl apply -k kubernetes
+```
+
+`GRAFANA_ADMIN_PASSWORD` must be present: Grafana reads it from `ecommerce-secrets`. Existing `02-secrets.yml` files created before 2026-11-01 do not have it.
 
 ---
 

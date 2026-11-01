@@ -23,7 +23,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Tooltip,
 } from '@mui/material';
 import {
   Visibility,
@@ -34,13 +33,8 @@ import {
   SpeedRounded,
   SecurityRounded,
   StorefrontRounded,
-  AdminPanelSettingsRounded,
-  SupervisorAccountRounded,
-  PersonOutlineRounded,
   ShieldRounded,
-  BoltRounded,
   KeyRounded,
-  InfoOutlined,
 } from '@mui/icons-material';
 import { AuthService, loginSuccess, logout } from '@ecommerce/shared-library';
 import type { RootState } from '@ecommerce/shared-library';

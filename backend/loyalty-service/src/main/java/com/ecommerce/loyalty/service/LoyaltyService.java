@@ -6,8 +6,8 @@ import com.ecommerce.loyalty.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.ecommerce.outbox.OutboxWriter;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,8 +33,8 @@ public class LoyaltyService {
     @Autowired
     private LoyaltyTierRuleRepository tierRuleRepository;
 
-    @Autowired(required = false)
-    private KafkaTemplate<String, Object> kafkaTemplate;
+    @Autowired
+    private OutboxWriter outbox;
 
     // ─────────────────────────────────────────────
     // Profile
@@ -42,11 +42,20 @@ public class LoyaltyService {
 
     @Transactional
     public LoyaltyAccountDto getOrCreateProfile(Long userId) {
-        LoyaltyAccount account = accountRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    LoyaltyAccount newAcc = new LoyaltyAccount(userId);
-                    return accountRepository.save(newAcc);
-                });
+        return getOrCreateProfile(userId, null);
+    }
+
+    @Transactional
+    public LoyaltyAccountDto getOrCreateProfile(Long userId, java.util.UUID tenantId) {
+        LoyaltyAccount account = (tenantId != null)
+                ? accountRepository.findByUserIdAndTenantId(userId, tenantId)
+                        .orElseGet(() -> {
+                            LoyaltyAccount a = new LoyaltyAccount(userId);
+                            a.setTenantId(tenantId);
+                            return accountRepository.save(a);
+                        })
+                : accountRepository.findByUserId(userId)
+                        .orElseGet(() -> accountRepository.save(new LoyaltyAccount(userId)));
         return toDto(account, true);
     }
 
@@ -62,8 +71,16 @@ public class LoyaltyService {
 
     @Transactional
     public LoyaltyAccountDto earnPoints(Long userId, EarnPointsRequest req) {
-        LoyaltyAccount account = accountRepository.findByUserId(userId)
-                .orElseGet(() -> accountRepository.save(new LoyaltyAccount(userId)));
+        return earnPoints(userId, null, req);
+    }
+
+    @Transactional
+    public LoyaltyAccountDto earnPoints(Long userId, java.util.UUID tenantId, EarnPointsRequest req) {
+        LoyaltyAccount account = (tenantId != null)
+                ? accountRepository.findByUserIdAndTenantId(userId, tenantId)
+                        .orElseGet(() -> { LoyaltyAccount a = new LoyaltyAccount(userId); a.setTenantId(tenantId); return accountRepository.save(a); })
+                : accountRepository.findByUserId(userId)
+                        .orElseGet(() -> accountRepository.save(new LoyaltyAccount(userId)));
 
         BigDecimal multiplier = getTierMultiplier(account.getTier());
         int basePoints = req.getOrderAmount().multiply(BigDecimal.TEN).intValue(); // 10 pts per $1
@@ -108,8 +125,16 @@ public class LoyaltyService {
 
     @Transactional
     public RedeemPointsResponse redeemPoints(Long userId, RedeemPointsRequest req) {
-        LoyaltyAccount account = accountRepository.findByUserId(userId)
-                .orElseThrow(() -> new NoSuchElementException("No loyalty account for userId=" + userId));
+        return redeemPoints(userId, null, req);
+    }
+
+    @Transactional
+    public RedeemPointsResponse redeemPoints(Long userId, java.util.UUID tenantId, RedeemPointsRequest req) {
+        LoyaltyAccount account = (tenantId != null)
+                ? accountRepository.findByUserIdAndTenantId(userId, tenantId)
+                        .orElseThrow(() -> new NoSuchElementException("No loyalty account for userId=" + userId + " in tenant " + tenantId))
+                : accountRepository.findByUserId(userId)
+                        .orElseThrow(() -> new NoSuchElementException("No loyalty account for userId=" + userId));
 
         RedeemPointsResponse resp = new RedeemPointsResponse();
 
@@ -160,8 +185,16 @@ public class LoyaltyService {
 
     @Transactional
     public LoyaltyAccountDto awardBonus(Long userId, BonusPointsRequest req) {
-        LoyaltyAccount account = accountRepository.findByUserId(userId)
-                .orElseGet(() -> accountRepository.save(new LoyaltyAccount(userId)));
+        return awardBonus(userId, null, req);
+    }
+
+    @Transactional
+    public LoyaltyAccountDto awardBonus(Long userId, java.util.UUID tenantId, BonusPointsRequest req) {
+        LoyaltyAccount account = (tenantId != null)
+                ? accountRepository.findByUserIdAndTenantId(userId, tenantId)
+                        .orElseGet(() -> { LoyaltyAccount a = new LoyaltyAccount(userId); a.setTenantId(tenantId); return accountRepository.save(a); })
+                : accountRepository.findByUserId(userId)
+                        .orElseGet(() -> accountRepository.save(new LoyaltyAccount(userId)));
 
         account.setPointsBalance(account.getPointsBalance() + req.getPoints());
         account.setLifetimePoints(account.getLifetimePoints() + req.getPoints());
@@ -182,6 +215,11 @@ public class LoyaltyService {
     // ─────────────────────────────────────────────
 
     public List<LoyaltyTransactionDto> getTransactions(Long userId, int page, int size) {
+        return getTransactions(userId, null, page, size);
+    }
+
+    public List<LoyaltyTransactionDto> getTransactions(Long userId, java.util.UUID tenantId, int page, int size) {
+        // Transactions are scoped by userId; tenant isolation is enforced at the account level
         return transactionRepository
                 .findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size))
                 .getContent()
@@ -317,16 +355,15 @@ public class LoyaltyService {
         };
     }
 
+    /**
+     * Writes the event to the outbox in the caller's transaction; it is published to {@code topic} after commit.
+     * The payload format is unchanged because crm-service consumes these topics.
+     */
     private void publishEvent(String topic, Map<String, Object> payload) {
-        if (kafkaTemplate == null) return;
-        try {
-            StringBuilder sb = new StringBuilder("{");
-            payload.forEach((k, v) -> sb.append("\"").append(k).append("\":\"").append(v).append("\","));
-            if (sb.length() > 1) sb.setLength(sb.length() - 1);
-            sb.append("}");
-            kafkaTemplate.send(topic, sb.toString());
-        } catch (Exception e) {
-            log.warn("Failed to publish loyalty event to {}: {}", topic, e.getMessage());
-        }
+        StringBuilder sb = new StringBuilder("{");
+        payload.forEach((k, v) -> sb.append("\"").append(k).append("\":\"").append(v).append("\","));
+        if (sb.length() > 1) sb.setLength(sb.length() - 1);
+        sb.append("}");
+        outbox.append(topic, null, topic, sb.toString());
     }
 }

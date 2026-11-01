@@ -1,7 +1,8 @@
 # build environment
-FROM node:20-alpine as build
+FROM node:22-alpine as build
 WORKDIR /app
 COPY package*.json ./
+# TODO: replace with `npm ci` once package-lock.json files are committed (TD-08)
 RUN npm install
 COPY . .
 RUN npm run build

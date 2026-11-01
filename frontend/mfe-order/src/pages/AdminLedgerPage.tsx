@@ -26,7 +26,6 @@ import {
   Button,
   Pagination,
   Alert,
-  Divider,
   Tabs,
   Tab,
 } from '@mui/material';
@@ -35,11 +34,7 @@ import {
   AddCircleOutlineRounded,
   HistoryRounded,
   UndoRounded,
-  RefreshRounded,
   FilterListRounded,
-  SearchRounded,
-  CheckCircleRounded,
-  RemoveCircleOutlineRounded,
   WarningAmberRounded,
   VisibilityOutlined,
   ReceiptLongRounded,
@@ -48,15 +43,13 @@ import {
   GavelRounded,
   AssessmentRounded,
   FlagRounded,
-  DoneAllRounded,
   InfoOutlined,
 } from '@mui/icons-material';
 import axios from 'axios';
 
 axios.interceptors.request.use((config) => {
-  if (config.url && !config.url.startsWith('http')) {
-    const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost';
-    config.url = `http://${host}:8080${config.url.startsWith('/') ? '' : '/'}${config.url}`;
+  if (config.url && !config.url.startsWith('http') && !config.url.startsWith('/')) {
+    config.url = `/${config.url}`; // Same origin: nginx (containers) and the Vite dev proxy forward /api to the gateway.
   }
   const token = typeof window !== 'undefined' ? localStorage.getItem('jwt_token') : null;
   if (token && !config.headers.Authorization) {
@@ -187,7 +180,7 @@ export default function AdminLedgerPage() {
   const [adjustUserId, setAdjustUserId] = useState<string>('');
   const [adjustType, setAdjustType] = useState<string>('MANUAL_CREDIT');
   const [adjustAmount, setAdjustAmount] = useState<string>('');
-  const [adjustCurrency, setAdjustCurrency] = useState<string>('USD');
+  const [adjustCurrency] = useState<string>('USD');
   const [adjustRefType, setAdjustRefType] = useState<string>('SUPPORT_TICKET');
   const [adjustRefId, setAdjustRefId] = useState<string>('');
   const [adjustReason, setAdjustReason] = useState<string>('');

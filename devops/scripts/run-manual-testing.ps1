@@ -165,7 +165,7 @@ try {
     $amHealth = Invoke-RestMethod -Uri "http://localhost:9093/-/healthy" -TimeoutSec 5
     Assert-Test "Alertmanager cluster healthy" ($amHealth.Trim() -eq "OK")
     
-    $cred = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("admin:ecommerce123"))
+    $cred = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("admin:$($env:GRAFANA_ADMIN_PASSWORD)"))
     $grafSearch = Invoke-RestMethod -Uri "http://localhost:3030/api/search?query=SLO" -Headers @{ Authorization = "Basic $cred" } -TimeoutSec 5
     Assert-Test "Grafana SLO Dashboard registered & accessible" ($grafSearch.Count -ge 1) "Dashboard UID: $($grafSearch[0].uid)"
 } catch {

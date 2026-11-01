@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -19,7 +20,8 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-redux": "^9.3.0",
-    "react-router-dom": "^7.18.0"
+    "react-router-dom": "^7.18.0",
+    "@ecommerce/shared-library": "*"
   },
   "devDependencies": {
     "@originjs/vite-plugin-federation": "^1.4.1",
@@ -30,5 +32,8 @@
     "oxlint": "^1.69.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

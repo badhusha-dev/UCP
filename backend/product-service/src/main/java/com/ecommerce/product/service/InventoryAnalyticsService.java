@@ -2,8 +2,6 @@ package com.ecommerce.product.service;
 
 import com.ecommerce.product.dto.InventoryAnalyticsDto;
 import com.ecommerce.product.model.Product;
-import com.ecommerce.product.model.ProductCategory;
-import com.ecommerce.product.repository.ProductCategoryRepository;
 import com.ecommerce.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,12 +18,11 @@ import java.util.stream.Collectors;
 public class InventoryAnalyticsService {
 
     private final ProductRepository productRepository;
-    private final ProductCategoryRepository categoryRepository;
 
+    /** Aggregates only the given tenant's products; category names come from those products, not the whole table. */
     @Transactional(readOnly = true)
-    public InventoryAnalyticsDto getInventoryAnalytics() {
-        List<Product> products = productRepository.findAll();
-        List<ProductCategory> categories = categoryRepository.findAll();
+    public InventoryAnalyticsDto getInventoryAnalytics(UUID tenantId) {
+        List<Product> products = productRepository.findAllByTenantId(tenantId);
 
         long totalUnits = 0;
         long lowStockCount = 0;
@@ -62,8 +58,10 @@ public class InventoryAnalyticsService {
 
         // Build category breakdown
         List<InventoryAnalyticsDto.CategoryInventorySummaryDto> categorySummaries = new ArrayList<>();
-        Map<Long, String> categoryNames = categories.stream()
-                .collect(Collectors.toMap(ProductCategory::getId, ProductCategory::getName, (a, b) -> a));
+        Map<Long, String> categoryNames = new HashMap<>();
+        for (Product p : products) {
+            if (p.getCategory() != null) categoryNames.putIfAbsent(p.getCategory().getId(), p.getCategory().getName());
+        }
         categoryNames.put(0L, "Uncategorized");
 
         for (Map.Entry<Long, List<Product>> entry : productsByCategory.entrySet()) {

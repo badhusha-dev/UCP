@@ -37,9 +37,7 @@ interface Props {
   onSelectGroup?: (fingerprint: string) => void;
 }
 
-const API_BASE = typeof window !== 'undefined'
-  ? `http://${window.location.hostname || 'localhost'}:8080`
-  : 'http://localhost:8080';
+const API_BASE = ''; // Same origin: nginx (containers) and the Vite dev proxy forward /api to the gateway.
 
 export default function ErrorOverviewPage({ onSelectGroup }: Props) {
   const [data, setData] = useState<ErrorOverview | null>(null);

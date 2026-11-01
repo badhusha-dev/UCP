@@ -46,7 +46,6 @@ import {
   ShoppingCartRounded,
   VisibilityRounded,
   LocalShippingOutlined,
-  VerifiedUserOutlined,
   BoltRounded,
   StarRounded,
   FilterListRounded,
@@ -62,11 +61,10 @@ import {
   SendRounded,
   VerifiedRounded,
   RateReviewRounded,
-  RestartAltRounded,
   PsychologyRounded,
 } from '@mui/icons-material';
-import { addToCart } from '@ecommerce/shared-library';
-import type { AppDispatch, RootState } from '@ecommerce/shared-library';
+import { addToCart, resolveActiveStorefront, storefrontParams } from '@ecommerce/shared-library';
+import type { ActiveStorefront, AppDispatch, RootState } from '@ecommerce/shared-library';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 
@@ -136,6 +134,8 @@ export default function ProductPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>(['All', 'Audio', 'Computer Peripherals', 'Gaming']);
   const [loading, setLoading] = useState(true);
+  const [storefront, setStorefront] = useState<ActiveStorefront | null>(null);
+  const [catalogError, setCatalogError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('featured');
@@ -192,13 +192,18 @@ export default function ProductPage() {
   }, [user]);
 
   const loadProducts = () => {
-    axios
-      .get('http://localhost:8080/api/products')
+    // The catalog belongs to the storefront this visit is for; the server maps its slug to a tenant
+    resolveActiveStorefront(window.location, window.sessionStorage)
+      .then((active) => {
+        setStorefront(active);
+        setCatalogError('');
+        return axios.get('/api/products', { params: storefrontParams(active) });
+      })
       .then(async (res) => {
         const data = Array.isArray(res.data) ? res.data : res.data.content || [];
         const stockByProduct = new Map<number, number>();
         try {
-          const stockResponse = await axios.post('http://localhost:8080/api/stock/batch', data.map((item: any) => item.id));
+          const stockResponse = await axios.post('/api/stock/batch', data.map((item: any) => item.id));
           if (Array.isArray(stockResponse.data)) {
             stockResponse.data.forEach((stock: any) => {
               if (stock.productId != null && stock.availableQuantity != null) {
@@ -232,13 +237,14 @@ export default function ProductPage() {
       })
       .catch((err) => {
         console.error('Error fetching products:', err);
+        setCatalogError(err?.name === 'StorefrontLookupError' ? err.message : 'The catalog could not be loaded. Please try again shortly.');
         setLoading(false);
       });
   };
 
   const loadCategories = () => {
     axios
-      .get('http://localhost:8080/api/products/categories')
+      .get('/api/products/categories')
       .then((res) => {
         if (Array.isArray(res.data) && res.data.length > 0) {
           const catNames = ['All', ...res.data.map((c: ProductCategory) => c.name)];
@@ -250,7 +256,7 @@ export default function ProductPage() {
 
   const loadWishlist = () => {
     axios
-      .get('http://localhost:8080/api/products/wishlist')
+      .get('/api/products/wishlist')
       .then((res) => {
         if (Array.isArray(res.data)) {
           const ids = new Set<number>(res.data.map((p: Product) => p.id));
@@ -262,7 +268,7 @@ export default function ProductPage() {
 
   const loadRecentlyViewed = () => {
     axios
-      .get('http://localhost:8080/api/products/recently-viewed?limit=5')
+      .get('/api/products/recently-viewed?limit=5')
       .then((res) => {
         if (Array.isArray(res.data)) {
           setRecentlyViewed(res.data);
@@ -282,7 +288,7 @@ export default function ProductPage() {
     const isInWishlist = wishlistIds.has(product.id);
     try {
       if (isInWishlist) {
-        await axios.delete(`http://localhost:8080/api/products/wishlist/${product.id}`);
+        await axios.delete(`/api/products/wishlist/${product.id}`);
         setWishlistIds((prev) => {
           const next = new Set(prev);
           next.delete(product.id);
@@ -290,7 +296,7 @@ export default function ProductPage() {
         });
         setSnackbarMessage(`Removed "${product.name}" from your wishlist.`);
       } else {
-        await axios.post(`http://localhost:8080/api/products/wishlist/${product.id}`);
+        await axios.post(`/api/products/wishlist/${product.id}`);
         setWishlistIds((prev) => new Set(prev).add(product.id));
         setSnackbarMessage(`Added "${product.name}" to your wishlist! ❤️`);
       }
@@ -308,12 +314,12 @@ export default function ProductPage() {
 
     // Record view in backend
     if (user) {
-      axios.post(`http://localhost:8080/api/products/${product.id}/view`).catch(() => {});
+      axios.post(`/api/products/${product.id}/view`).catch(() => {});
     }
 
     // Load variants
     axios
-      .get(`http://localhost:8080/api/products/${product.id}/variants`)
+      .get(`/api/products/${product.id}/variants`)
       .then((res) => {
         if (Array.isArray(res.data)) {
           const stockQuantity = product.stockQuantity;
@@ -327,7 +333,7 @@ export default function ProductPage() {
     // Load reviews
     setReviewsLoading(true);
     axios
-      .get(`http://localhost:8080/api/products/${product.id}/reviews`)
+      .get(`/api/products/${product.id}/reviews`)
       .then((res) => {
         if (Array.isArray(res.data)) setReviews(res.data);
         setReviewsLoading(false);
@@ -354,7 +360,7 @@ export default function ProductPage() {
 
     setSubmittingReview(true);
     try {
-      const res = await axios.post(`http://localhost:8080/api/products/${quickViewProduct.id}/reviews`, {
+      const res = await axios.post(`/api/products/${quickViewProduct.id}/reviews`, {
         rating: newReviewRating,
         comment: newReviewComment.trim(),
       });
@@ -583,6 +589,17 @@ export default function ProductPage() {
 
       {/* Main Catalog Container */}
       <Container maxWidth="xl">
+        {catalogError && (
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+            {catalogError}
+          </Alert>
+        )}
+        {storefront && (
+          <Alert severity="info" icon={false} sx={{ mb: 3, borderRadius: 2 }}>
+            You are shopping at <strong>{storefront.name}</strong>.
+          </Alert>
+        )}
+
         {/* Search, Categories & Sort Bar */}
         <Paper
           elevation={0}

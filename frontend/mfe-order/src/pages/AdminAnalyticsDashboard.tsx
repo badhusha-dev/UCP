@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Typography,
   Paper,
@@ -8,7 +8,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  CircularProgress,
   Box,
   Container,
   Grid,
@@ -39,19 +38,12 @@ import {
   CalendarTodayRounded,
   RefreshRounded,
   FileDownloadRounded,
-  WarningAmberRounded,
-  CheckCircleOutlineRounded,
   ShoppingCartRounded,
-  LocalShippingRounded,
   AttachMoneyRounded,
-  Inventory2Rounded,
   PeopleRounded,
-  ReceiptLongRounded,
   SmartToyRounded,
   InfoOutlined,
   CloseRounded,
-  SearchRounded,
-  FilterListRounded,
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -73,9 +65,7 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
-const API_BASE = typeof window !== 'undefined'
-  ? `http://${window.location.hostname || 'localhost'}:8080`
-  : 'http://localhost:8080';
+const API_BASE = ''; // Same origin: nginx (containers) and the Vite dev proxy forward /api to the gateway.
 
 // --- Interfaces ---
 interface MetricCard<T> {
@@ -256,22 +246,33 @@ export default function AdminAnalyticsDashboard() {
         params.endDate = customEnd;
       }
 
-      // Parallel requests
+      // Parallel requests; each failure is recorded so the dashboard can name the sections that did not load
+      const failed: string[] = [];
+      const settle = <T,>(section: string, request: Promise<{ data: T }>) =>
+        request.catch((err: any) => {
+          const message = err?.response?.data?.message;
+          failed.push(message ? `${section} (${message})` : section);
+          return null;
+        });
       const [overviewRes, salesRes, productsRes, customersRes, inventoryRes, alertsRes] = await Promise.all([
-        axios.get<OverviewData>(`${API_BASE}/api/orders/admin/analytics/overview`, { params }).catch(() => null),
-        axios.get<SalesData>(`${API_BASE}/api/orders/admin/analytics/sales`, { params }).catch(() => null),
-        axios.get<ProductData>(`${API_BASE}/api/orders/admin/analytics/products`, { params }).catch(() => null),
-        axios.get<CustomerData>(`${API_BASE}/api/orders/admin/analytics/customers`, { params }).catch(() => null),
-        axios.get<InventoryData>(`${API_BASE}/api/products/admin/analytics/inventory`).catch(() => null),
-        axios.get<AlertData>(`${API_BASE}/api/orders/admin/analytics/alerts`).catch(() => null),
+        settle('Overview', axios.get<OverviewData>(`${API_BASE}/api/orders/admin/analytics/overview`, { params })),
+        settle('Sales', axios.get<SalesData>(`${API_BASE}/api/orders/admin/analytics/sales`, { params })),
+        settle('Products', axios.get<ProductData>(`${API_BASE}/api/orders/admin/analytics/products`, { params })),
+        settle('Customers', axios.get<CustomerData>(`${API_BASE}/api/orders/admin/analytics/customers`, { params })),
+        settle('Inventory', axios.get<InventoryData>(`${API_BASE}/api/products/admin/analytics/inventory`)),
+        settle('Alerts', axios.get<AlertData>(`${API_BASE}/api/orders/admin/analytics/alerts`)),
       ]);
 
-      if (overviewRes?.data) setOverview(overviewRes.data);
-      if (salesRes?.data) setSales(salesRes.data);
-      if (productsRes?.data) setProducts(productsRes.data);
-      if (customersRes?.data) setCustomers(customersRes.data);
-      if (inventoryRes?.data) setInventory(inventoryRes.data);
-      if (alertsRes?.data) setAlerts(alertsRes.data);
+      // A section that failed is cleared, so it never shows data from the previous time range
+      setOverview(overviewRes?.data ?? null);
+      setSales(salesRes?.data ?? null);
+      setProducts(productsRes?.data ?? null);
+      setCustomers(customersRes?.data ?? null);
+      setInventory(inventoryRes?.data ?? null);
+      setAlerts(alertsRes?.data ?? null);
+      if (failed.length > 0) {
+        setError(`Some analytics could not be loaded: ${failed.join(', ')}.`);
+      }
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Failed to load business analytics data.');
     } finally {
@@ -616,6 +617,20 @@ export default function AdminAnalyticsDashboard() {
           </Typography>
         </Stack>
       </Paper>
+
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ mb: 3, borderRadius: 2 }}
+          action={
+            <Button color="inherit" size="small" onClick={() => fetchAnalytics()}>
+              Retry
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      )}
 
       {/* Operational Warnings / Alerts Banner */}
       {alerts && alerts.warnings.length > 0 && (

@@ -45,7 +45,6 @@ class DeliveryStatusSyncTest {
         returns.deleteAll();
         tracking.deleteAll();
         orders.deleteAll();
-        when(producer.publishOrderEvent(any())).thenReturn(CompletableFuture.completedFuture(null));
     }
 
     private Order order(String status) {

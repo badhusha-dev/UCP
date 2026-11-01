@@ -55,7 +55,6 @@ class StorefrontCheckoutTest {
     @BeforeEach
     void setUp() {
         orderRepository.deleteAll();
-        when(producer.publishOrderEvent(any())).thenReturn(CompletableFuture.completedFuture(null));
         when(pricing.enabled()).thenReturn(false); // the deployment-wide (legacy) pricing flag is off
         when(storefronts.resolve("acme")).thenReturn(new StorefrontClient.Storefront(TENANT, "main", "RETAIL", "acme"));
         when(storefronts.resolve("bistro")).thenReturn(new StorefrontClient.Storefront(TENANT, "kitchen", "RESTAURANT", "bistro"));

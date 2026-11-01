@@ -1,9 +1,13 @@
 package com.ecommerce.user.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.ColumnDefault;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "users")
@@ -35,4 +39,13 @@ public class User {
     @Column(nullable = false)
     @Schema(description = "Account active status flag", example = "true")
     private boolean active = true;
+
+    @Column(name = "failed_login_attempts", nullable = false)
+    @ColumnDefault("0")
+    @JsonIgnore
+    private int failedLoginAttempts = 0;
+
+    @Column(name = "locked_until")
+    @JsonIgnore
+    private Instant lockedUntil;
 }

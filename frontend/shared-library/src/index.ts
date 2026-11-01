@@ -9,3 +9,4 @@ export * from './components/ErrorBoundary';
 export * from './services/ErrorReporter';
 export * from './config/applicationRegistry';
 export * from './auth/applicationSession';
+export * from './storefront/activeStorefront';

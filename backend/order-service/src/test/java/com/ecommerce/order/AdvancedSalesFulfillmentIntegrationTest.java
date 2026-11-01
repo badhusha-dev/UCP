@@ -75,7 +75,6 @@ public class AdvancedSalesFulfillmentIntegrationTest {
         trackingRepository.deleteAll();
         orderRepository.deleteAll();
         couponRepository.deleteAll();
-        when(orderProducerService.publishOrderEvent(any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Seed test coupon
         Coupon coupon = new Coupon();

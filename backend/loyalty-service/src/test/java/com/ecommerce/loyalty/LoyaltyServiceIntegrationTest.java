@@ -21,6 +21,27 @@ class LoyaltyServiceIntegrationTest {
     @Autowired
     private LoyaltyService loyaltyService;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @Test
+    void testEarnPoints_recordsPointsAndTierEventsInOutbox() {
+        jdbcTemplate.update("DELETE FROM outbox_events");
+        loyaltyService.getOrCreateProfile(9100L);
+
+        EarnPointsRequest req = new EarnPointsRequest();
+        req.setOrderId("ORD-OUTBOX");
+        req.setOrderAmount(new BigDecimal("100.00"));
+        loyaltyService.earnPoints(9100L, req); // 1000 pts: BRONZE -> SILVER
+
+        java.util.List<String> topics = jdbcTemplate.queryForList(
+                "SELECT topic FROM outbox_events WHERE status = 'NEW' ORDER BY created_at", String.class);
+        assertThat(topics).contains("loyalty.points.earned", "loyalty.tier.upgraded");
+        String payload = jdbcTemplate.queryForObject(
+                "SELECT payload FROM outbox_events WHERE topic = 'loyalty.points.earned'", String.class);
+        assertThat(payload).startsWith("{").endsWith("}").contains("\"userId\":\"9100\"");
+    }
+
     @Test
     void testGetOrCreateProfile_createsNewAccount() {
         LoyaltyAccountDto profile = loyaltyService.getOrCreateProfile(9001L);

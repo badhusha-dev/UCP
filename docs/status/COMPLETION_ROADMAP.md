@@ -34,7 +34,7 @@ Required for a usable MVP.
 
 | Item | Features | Depends on | Acceptance criteria | Required tests |
 |---|---|---|---|---|
-| 1.1 Frontend typecheck clean | TD-01, TD-02, TD-03 | None | `tsc --noEmit` passes in all 16 workspaces; CI runs it. | CI job. |
+| 1.1 Frontend typecheck clean | TD-01, TD-02, TD-03 | None | **Done 2026-11-01.** `tsc --noEmit` passes in all 16 workspaces; CI runs it. | CI job. |
 | 1.2 Test coverage for each application | TD-04, A-01…A-10 | 1.1 | Each application has route-level smoke tests. | `npm test` in every workspace. |
 | 1.3 Outbox for all producers | F-10, B-16, B-34 | None | Cart, inventory, loyalty, order, stock and notification write events in the same transaction as the state change. | Test that an event is written atomically; test that a publisher retry is idempotent. |
 | 1.4 Logout and token revocation | F-08, B-21 | 0.6 or Redis | Logout invalidates the session; revoked tokens are refused by the gateway. | Token refused after logout. |
@@ -42,7 +42,7 @@ Required for a usable MVP.
 | 1.6 Password reset | F-06 | 1.5, notification | Reset token single use and time limited; no account enumeration. | Expired, reused and unknown-email tests. |
 | 1.7 Atomic inventory reservations | A-04 | 0.4 (inventory and stock) | Reservation and order creation commit together or not at all. | Concurrent order test on Postgres. |
 | 1.8 Delivery created on fulfilment | A-06 | 1.3 | Fulfilling an order creates a delivery and sends a customer notification. | End-to-end test: order → delivery → notification. |
-| 1.9 Storefront tenant resolution | A-03, B-25 | 0.4 (cart and order) | Domain or slug resolves to a tenant; checkout writes that tenant. | Cross-tenant checkout test. |
+| 1.9 Storefront tenant resolution | A-03, B-25 | 0.4 (cart and order) | Domain or slug resolves to a tenant; checkout writes that tenant. **Partly done 2026-11-01**: catalog and checkout are tenant-scoped from the storefront; the cart is not yet (K2). | Cross-tenant catalog test and checkout test: done (`StorefrontCatalogTest`, `StorefrontCheckoutTest`). Cart cross-tenant test: open. |
 | 1.10 Apply pending migrations on Postgres | B-28 | Scratch Postgres | Delivery V1–V2 and inventory V4 applied; `flyway_schema_history` matches the repository. | `flyway validate` against a scratch database. |
 | 1.11 Container runtime verification | F-14 | Docker host | All 46 compose services start and report healthy. | `docker compose up -d` plus `scripts/health-check.sh`. |
 | 1.12 Gateway actuator restriction | F-17, B-19 | Config-repo decision | Non-prod gateway exposes only `health,info,prometheus`. | Actuator `refresh` returns 404. |
@@ -62,9 +62,9 @@ Required for a usable MVP.
 | 2.8 Istio policies for new services | F-12, B-24 | Mesh rollout | Each new service has an AuthorizationPolicy listing its callers. | Denied call from unlisted principal. |
 | 2.9 Alert secret injection | F-16, B-17 | 0.1 | Alertmanager reads webhook and routing keys from Secrets. | Alert delivered to a test channel. |
 | 2.10 DLQ for every consumer | F-11 | None | Each consumer has retry and dead-letter handling. | Poison message goes to DLQ. |
-| 2.11 Frontend API base from config | B-15 | None | No `localhost:8080` in source. | `git grep localhost:8080` returns only tests. |
+| 2.11 Frontend API base from config | B-15 | None | **Done 2026-11-01** with same-origin `/api` URLs. No `localhost:8080` in source. | `git grep localhost:8080` returns only tests. |
 | 2.12 Server-side promo validation | B-14 | Pricing quote API | Promo codes validated by the pricing API. | Invalid code refused; valid code priced. |
-| 2.13 Storefront UI sends tenant | B-25, K4 | 1.9 | Storefront flows include the tenant. | Browser test. |
+| 2.13 Storefront UI sends tenant | B-25, K4 | 1.9 | Storefront flows include the tenant. **Done 2026-11-01** for the catalog and checkout (`mfe-product`, `mfe-order`, shared `resolveActiveStorefront`). | Browser test: catalog run in the built-in browser 2026-11-01; checkout run through the gateway; the checkout page was not clicked through. |
 
 ## Phase 3 — Enhancements and cleanup (P3)
 

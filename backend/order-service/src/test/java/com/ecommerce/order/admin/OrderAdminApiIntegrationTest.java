@@ -67,7 +67,6 @@ class OrderAdminApiIntegrationTest {
     void reset() {
         wipe();
         doNothing().when(grants).requireCurrentGrant(anyString());
-        when(producer.publishOrderEvent(any())).thenReturn(CompletableFuture.completedFuture(null));
     }
 
     @AfterEach

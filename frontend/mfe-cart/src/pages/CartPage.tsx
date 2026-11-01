@@ -73,10 +73,21 @@ export default function CartPage() {
   const [errorMsg, setErrorMsg] = useState<string>('');
 
   const getSessionToken = () => {
-    let token = localStorage.getItem('cart_session_token');
+    let storefrontSlug = 'default';
+    try {
+      const raw = sessionStorage.getItem('ucp.storefront');
+      if (raw) {
+        const parsed = JSON.parse(raw) as { slug?: unknown };
+        if (typeof parsed?.slug === 'string' && parsed.slug) storefrontSlug = parsed.slug;
+      }
+    } catch {
+      // ignore malformed sessionStorage entry
+    }
+    const key = `cart_session_token_${storefrontSlug}`;
+    let token = localStorage.getItem(key);
     if (!token) {
       token = 'sess_' + Math.random().toString(36).substring(2, 12);
-      localStorage.setItem('cart_session_token', token);
+      localStorage.setItem(key, token);
     }
     return token;
   };
