@@ -119,19 +119,21 @@ jobs:
       matrix:
         mfe:
           - name: shell-app
-            dockerfile: Dockerfile.shell
           - name: mfe-product
-            dockerfile: Dockerfile.product
           - name: mfe-order
-            dockerfile: Dockerfile.order
           - name: mfe-user
-            dockerfile: Dockerfile.user
           - name: mfe-inventory
-            dockerfile: Dockerfile.inventory
           - name: mfe-super-admin
-            dockerfile: Dockerfile.super-admin
           - name: mfe-delivery
-            dockerfile: Dockerfile.delivery
+            nginx_conf: nginx-delivery.conf
+          - name: mfe-stock
+          - name: mfe-cart
+          - name: mfe-loyalty
+          - name: mfe-accounting
+          - name: mfe-analytics
+          - name: mfe-error-stack
+          - name: mfe-crm
+          - name: mfe-procurement
     steps:
       - name: Checkout Codebase
         uses: actions/checkout@v4
@@ -150,7 +152,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
-          file: ./frontend/${{ matrix.mfe.dockerfile }}
+          file: ./frontend/Dockerfile.mfe
+          build-args: |
+            APP=${{ matrix.mfe.name }}
+            NGINX_CONF=${{ matrix.mfe.nginx_conf || 'nginx.conf' }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.mfe.name }}:${{ github.sha }}

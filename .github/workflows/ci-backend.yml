@@ -177,6 +177,24 @@ jobs:
             dockerfile: Dockerfile.inventory
           - name: delivery-service
             dockerfile: Dockerfile.delivery
+          - name: accounting-service
+            dockerfile: Dockerfile.accounting
+          - name: analytics-service
+            dockerfile: Dockerfile.analytics
+          - name: cart-service
+            dockerfile: Dockerfile.cart
+          - name: crm-service
+            dockerfile: Dockerfile.crm
+          - name: error-stack-service
+            dockerfile: Dockerfile.error-stack
+          - name: loyalty-service
+            dockerfile: Dockerfile.loyalty
+          - name: procurement-service
+            dockerfile: Dockerfile.procurement
+          - name: qa-service
+            dockerfile: Dockerfile.qa
+          - name: stock-service
+            dockerfile: Dockerfile.stock
     steps:
       - name: Checkout Codebase
         uses: actions/checkout@v4

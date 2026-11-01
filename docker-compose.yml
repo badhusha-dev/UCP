@@ -417,8 +417,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.crm
-    ports:
-      - "127.0.0.1:8092:8092"
+    # No published port: the service trusts role headers, so it is reachable only through the gateway.
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - CONFIG_SERVER_URL=http://config-server:8888
@@ -451,8 +450,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.procurement
-    ports:
-      - "127.0.0.1:8093:8093"
+    # No published port: the service trusts role headers, so it is reachable only through the gateway.
     environment:
       - SERVICE_TO_SERVICE_TOKEN=${SERVICE_TO_SERVICE_TOKEN:?SERVICE_TO_SERVICE_TOKEN must be set in .env}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
@@ -824,170 +822,176 @@ services:
     cpus: 2.0
     pids_limit: 256
 
+  # Frontend images are built from source with frontend/Dockerfile.mfe (no local dist/ needed).
+  # Rebuild one after a change:  docker compose up -d --build mfe-cart
   shell-app:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.shell
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: shell-app
     ports:
       - "127.0.0.1:3000:80"
-    volumes:
-      - ./frontend/shell-app/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-product:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.product
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-product
     ports:
       - "127.0.0.1:3001:80"
-    volumes:
-      - ./frontend/mfe-product/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-order:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.order
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-order
     ports:
       - "127.0.0.1:3002:80"
-    volumes:
-      - ./frontend/mfe-order/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-user:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.user
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-user
     ports:
       - "127.0.0.1:3003:80"
-    volumes:
-      - ./frontend/mfe-user/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-inventory:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-inventory
     container_name: ecommerce-platform-mfe-inventory-1
     ports:
       - "127.0.0.1:3004:80"
-    volumes:
-      - ./frontend/mfe-inventory/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-super-admin:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.super-admin
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-super-admin
     ports:
       - "127.0.0.1:3013:80"
-    volumes:
-      - ./frontend/mfe-super-admin/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-delivery:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.delivery
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-delivery
+        NGINX_CONF: nginx-delivery.conf
     ports:
       - "127.0.0.1:3014:80"
-    volumes:
-      - ./frontend/mfe-delivery/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx-delivery.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-stock:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-stock
     container_name: ecommerce-platform-mfe-stock-1
     ports:
       - "127.0.0.1:3009:80"
-    volumes:
-      - ./frontend/mfe-stock/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-cart:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-cart
     container_name: ecommerce-platform-mfe-cart-1
     ports:
       - "127.0.0.1:3005:80"
-    volumes:
-      - ./frontend/mfe-cart/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-loyalty:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-loyalty
     container_name: ecommerce-platform-mfe-loyalty-1
     ports:
       - "127.0.0.1:3006:80"
-    volumes:
-      - ./frontend/mfe-loyalty/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-accounting:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-accounting
     ports:
       - "127.0.0.1:3007:80"
-    volumes:
-      - ./frontend/mfe-accounting/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-crm:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-crm
     ports:
       - "127.0.0.1:3011:80"
-    volumes:
-      - ./frontend/mfe-crm/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-procurement:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-procurement
     ports:
       - "127.0.0.1:3012:80"
-    volumes:
-      - ./frontend/mfe-procurement/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-analytics:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-analytics
     ports:
       - "127.0.0.1:3008:80"
-    volumes:
-      - ./frontend/mfe-analytics/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 
   mfe-error-stack:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.mfe
+      args:
+        APP: mfe-error-stack
     container_name: ecommerce-platform-mfe-error-stack-1
     ports:
       - "127.0.0.1:3010:80"
-    volumes:
-      - ./frontend/mfe-error-stack/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - ecommerce-network
 

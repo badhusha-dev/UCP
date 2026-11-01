@@ -1,0 +1,23 @@
+# Builds one workspace of the frontend monorepo from source and serves it with nginx.
+#
+#   docker build -f Dockerfile.mfe --build-arg APP=mfe-cart -t ecommerce-mfe-cart ./frontend
+#
+# APP         workspace to build (shell-app, mfe-product, ...)
+# NGINX_CONF  nginx config copied from this directory (nginx-delivery.conf for mfe-delivery)
+FROM node:20-alpine AS build
+ARG APP
+WORKDIR /app
+COPY . .
+RUN test -n "$APP" || (echo "Set --build-arg APP=<workspace>" && exit 1)
+# package-lock.json is excluded by .dockerignore (the committed one is generated on Windows and
+# lacks the Linux native optional dependencies), so resolve fresh inside the image.
+RUN npm install --no-audit --no-fund
+RUN npm run build --workspace=@ecommerce/shared-library && npm run build --workspace="$APP"
+
+FROM nginx:alpine
+ARG APP
+ARG NGINX_CONF=nginx.conf
+COPY ${NGINX_CONF} /etc/nginx/conf.d/default.conf
+COPY --from=build /app/${APP}/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
